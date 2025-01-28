@@ -1,4 +1,3 @@
-
 variable "tags" {
   description = "Arbitrary tags that will be applied to all resources created in this module"
   type        = map(string)
@@ -20,12 +19,12 @@ variable "project_name" {
 }
 
 variable "cloud_init_config" {
-    description = "Cloud-init configuration that will be appended to user-data for the launch configuration"
-    type        = list(object({
-        path     = string
-        content  = string
-    }))
-    default = []
+  description = "Cloud-init configuration that will be appended to user-data for the launch configuration"
+  type = list(object({
+    path    = string
+    content = string
+  }))
+  default = []
 }
 
 variable "volume_mappings" {
@@ -52,8 +51,37 @@ variable "file_list" {
   default = []
 }
 
+
 variable placement_group {
     description = "Placement group for the autoscaling group"
     type        = string
     default = null
+}
+
+# propagate_tags_at_launch
+variable "propagate_tags_at_launch" {
+  description = "Specifies whether tags are propagated to the instances in the Auto Scaling group"
+  type        = bool
+  default     = true
+}
+
+# min_size
+variable "min_size" {
+  description = "Minimum size of the autoscaling group"
+  type        = number
+  default     = 1
+}
+
+# max_size
+variable "max_size" {
+  description = "Maximum size of the autoscaling group"
+  type        = number
+  default     = 3
+}
+
+# desired_capacity
+variable "desired_capacity" {
+  description = "Desired capacity of the autoscaling group"
+  type        = number
+  default     = 2
 }

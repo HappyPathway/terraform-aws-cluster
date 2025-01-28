@@ -55,24 +55,6 @@ data "cloudinit_config" "cloud_init" {
   }
 }
 
-<<<<<<< HEAD
-resource "aws_autoscaling_group" "example" {
-    name                 = "example-autoscaling-group"
-    launch_configuration = aws_launch_configuration.example.name
-    min_size             = var.min_size
-    max_size             = var.max_size
-    desired_capacity     = var.desired_capacity
-    vpc_zone_identifier  = var.subnets
-    tags                 = var.tags
-    placement_group      = var.placement_group
-    dynamic "tag" {
-        for_each = var.tags
-        content {
-            key                 = tag.key
-            value               = tag.value
-            propagate_at_launch = true
-        }
-=======
 resource "aws_autoscaling_group" "asg" {
   name                 = var.project_name
   launch_configuration = aws_launch_configuration.lc.name
@@ -80,6 +62,7 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = var.max_size
   desired_capacity     = var.desired_capacity
   vpc_zone_identifier  = var.subnets
+  placement_group      = var.placement_group
 
   dynamic "tag" {
     for_each = var.tags
@@ -87,7 +70,6 @@ resource "aws_autoscaling_group" "asg" {
       key                 = tag.key
       value               = tag.value
       propagate_at_launch = var.propagate_tags_at_launch
->>>>>>> 1358ac8c996bde0bae327a54731957e364eba8ae
     }
   }
 }

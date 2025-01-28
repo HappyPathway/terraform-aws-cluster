@@ -15,13 +15,13 @@ resource "aws_launch_configuration" "example" {
     key_name      = var.key_name
 
     security_groups = var.security_group_ids
-    user_data = data.terraform_cloudinit_config.example.rendered
-    # Other configuration options can be added here, such as volume mappings
+    user_data = data.cloudinit_config.cloud_init.rendered
+    tags = var.tags
 }
 
 data "cloudinit_config" "cloud_init" {
-  gzip          = false
-  base64_encode = false
+    gzip          = false
+    base64_encode = false
 
     # change to loop over a list of files
     dynamic "part" {
@@ -51,4 +51,13 @@ resource "aws_autoscaling_group" "example" {
     desired_capacity     = var.desired_capacity
     vpc_zone_identifier  = var.subnets
     tags                 = var.tags
+    
+    dynamic "tag" {
+        for_each = var.tags
+        content {
+            key                 = tag.key
+            value               = tag.value
+            propagate_at_launch = true
+        }
+    }
 }

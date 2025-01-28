@@ -72,11 +72,11 @@ resource "aws_launch_configuration" "lc" {
   }
 
   dynamic "ephemeral_block_device" {
-    for_each = var.launch_configuration.ephemeral_block_device
+    for_each = var.ephemeral_block_devices
     content {
-      device_name           = ephemeral_block_device.value.device_name
-      virtual_name          = ephemeral_block_device.value.virtual_name
-      no_device             = ephemeral_block_device.value.no_device
+      device_name  = ephemeral_block_device.value.device_name
+      virtual_name = ephemeral_block_device.value.virtual_name
+      no_device    = ephemeral_block_device.value.no_device
     }
   }
 

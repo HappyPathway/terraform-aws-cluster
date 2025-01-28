@@ -51,3 +51,9 @@ variable "file_list" {
   }))
   default = []
 }
+
+variable placement_group {
+    description = "Placement group for the autoscaling group"
+    type        = string
+    default = null
+}

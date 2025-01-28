@@ -51,7 +51,7 @@ resource "aws_autoscaling_group" "example" {
     desired_capacity     = var.desired_capacity
     vpc_zone_identifier  = var.subnets
     tags                 = var.tags
-    
+    placement_group      = var.placement_group
     dynamic "tag" {
         for_each = var.tags
         content {

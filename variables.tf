@@ -52,10 +52,10 @@ variable "file_list" {
 }
 
 
-variable placement_group {
-    description = "Placement group for the autoscaling group"
-    type        = string
-    default = null
+variable "placement_group" {
+  description = "Placement group for the autoscaling group"
+  type        = string
+  default     = null
 }
 
 # propagate_tags_at_launch
@@ -84,4 +84,40 @@ variable "desired_capacity" {
   description = "Desired capacity of the autoscaling group"
   type        = number
   default     = 2
+}
+
+variable ephemeral_block_device {
+    type = list(object({
+      device_name           = string
+      virtual_name          = string
+      no_device             = optional(bool, false)
+    }))
+    default = []
+}
+
+variable root_volume {
+    type = object({
+      iops                  = optional(number, 0)
+      throughput            = optional(number, 0)
+      delete_on_termination = optional(bool, true)
+      encrypted             = optional(bool, false)
+      volume_size           = optional(number, 8)
+      volume_type           = optional(string, "gp2")
+    })
+    default = {}
+}
+
+variable ebs_block_devices {
+    type = list(object({
+      device_name           = string
+      snapshot_id           = optional(string, null)
+      iops                  = optional(number, 0)
+      throughput            = optional(number, 0)
+      delete_on_termination = optional(bool, true)
+      encrypted             = optional(bool, false)
+      no_device             = optional(bool, false)
+      volume_size           = optional(number, 8)
+      volume_type           = optional(string, "gp2")
+    }))
+    default = []
 }

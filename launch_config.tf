@@ -1,13 +1,14 @@
 
 resource "aws_launch_configuration" "lc" {
+  count                       = var.launch_configuration == {} ? 0 : 1
   name_prefix                 = "${var.launch_configuration.project_name}-"
   image_id                    = data.aws_ami.ami.id
   iam_instance_profile        = var.launch_configuration.iam_instance_profile
-  instance_type               = var.launch_configuration.instance_type
+  instance_type               = var.instance_type
   associate_public_ip_address = var.launch_configuration.associate_public_ip_address
   placement_tenancy           = var.launch_configuration.placement_tenancy
   key_name                    = var.launch_configuration.key_name
-  security_groups             = var.launch_configuration.security_group_ids
+  security_groups             = var.security_group_ids
   user_data                   = data.cloudinit_config.cloud_init.rendered
   enable_monitoring           = var.launch_configuration.enable_monitoring
   ebs_optimized               = var.launch_configuration.ebs_optimized

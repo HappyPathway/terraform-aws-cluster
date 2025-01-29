@@ -51,13 +51,6 @@ variable "file_list" {
   default = []
 }
 
-
-variable "placement_group" {
-  description = "Placement group for the autoscaling group"
-  type        = string
-  default     = null
-}
-
 # propagate_tags_at_launch
 variable "propagate_tags_at_launch" {
   description = "Specifies whether tags are propagated to the instances in the Auto Scaling group"
@@ -120,4 +113,40 @@ variable "ebs_block_devices" {
     volume_type           = optional(string, "gp2")
   }))
   default = []
+}
+
+variable "launch_configuration" {
+  description = "Configuration for the launch configuration"
+  type = object({
+    project_name                = string
+    iam_instance_profile        = optional(string, null)
+    instance_type               = string
+    associate_public_ip_address = optional(bool, false)
+    placement_tenancy           = optional(string, "default")
+    key_name                    = optional(string, null)
+    security_group_ids          = optional(list(string), [])
+    enable_monitoring           = optional(bool, false)
+    ebs_optimized               = optional(bool, false)
+    metadata_options = optional(object({
+      http_tokens                 = optional(string, "optional")
+      http_put_response_hop_limit = optional(number, 1)
+      http_endpoint               = optional(string, "enabled")
+    }), {})
+  })
+  default = {
+    project_name  = "my-project"
+    instance_type = "t2.micro"
+  }
+}
+
+variable "placement_group" {
+  description = "Configuration for the placement group"
+  type = object({
+    name            = optional(string, null)
+    strategy        = optional(string, "cluster")
+    tags            = optional(map(string), {})
+    partition_count = optional(number, 2)
+    spread_level    = optional(string, "rack")
+  })
+  default = null
 }

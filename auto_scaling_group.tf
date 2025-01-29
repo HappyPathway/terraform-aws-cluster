@@ -5,7 +5,7 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = var.auto_scaling.max_size
   desired_capacity     = var.auto_scaling.desired_capacity
   vpc_zone_identifier  = var.auto_scaling.subnets
-  placement_group      = var.placement_group == null ? null : aws_placement_group.pg.name
+  placement_group      = var.placement_group == null ? null : one(aws_placement_group.pg).name
 
   availability_zones               = var.auto_scaling.availability_zones
   capacity_rebalance               = var.auto_scaling.capacity_rebalance

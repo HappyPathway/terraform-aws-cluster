@@ -27,80 +27,17 @@ jobs:
           
       - name: terraform init
         run: terraform init -upgrade
+        
       - name: Render terraform docs inside the README.md and push changes back to PR branch
         uses: terraform-docs/gh-actions@v1.2.0
-        if: ${{ github.event_name == 'pull_request' }}
         with:
           working-dir: .
           output-file: README.md
           output-method: inject
+          git-push: "true"
 
       # terraform-docs/gh-actions@v1.0.0 modifies .git files with owner root:root, and the following steps fail with
       # insufficient permission for adding an object to repository database .git/objects
       # since the expected user is runner:docker. See https://github.com/terraform-docs/gh-actions/issues/90
       - name: Fix .git owner
         run: sudo chown runner:docker -R .git
-
-      - name: Update Pull Request
-        uses: actions/github-script@v6
-        if: github.event_name == 'pull_request' && env.auto_format != 'true'
-        with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          script: |
-            // 1. Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const botComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
-            })
-
-            // 2. Prepare format of the comment
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Test \`${{ steps.test.outcome }}\`
-            <details><summary>Test Output</summary>
-      
-            \`\`\`\n
-            ${{ steps.test.outputs.stdout }}
-            \`\`\`
-      
-            </details>
-      
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
-      
-            // 3. If we have a comment, update it, otherwise create a new one
-            if (botComment) {
-              github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: output
-              })
-            } else {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: output
-              })
-            }
-            
-      - name: Commit & Push changes
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if ! git diff-index --quiet HEAD; then 
-            git status
-            remote_repo="https://${{github.actor}}:${{secrets.GH_TOKEN}}@${{ github.server_url }}/${{ github.repository }}.git"
-            git remote add repo ${remote_repo}
-            git config http.sslVerify false
-            git config --local user.email "${{vars.GH_EMAIL}}"
-            git config --local user.name "${{vars.GH_USERNAME}}"
-            git add .
-            git commit -m "Terraform Docs"
-            git push -u repo ${{ github.head_ref }}
-            echo "auto_format=true" >> $GITHUB_ENV 
-          fi

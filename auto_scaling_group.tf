@@ -1,6 +1,7 @@
 resource "aws_autoscaling_group" "asg" {
   name                 = var.project_name
   launch_configuration = var.launch_configuration == {} ? null : one(aws_launch_configuration.lc).name
+
   min_size             = var.auto_scaling.min_size
   max_size             = var.auto_scaling.max_size
   desired_capacity     = var.auto_scaling.desired_capacity

@@ -97,8 +97,8 @@ jobs:
             remote_repo="https://${{github.actor}}:${{secrets.GH_TOKEN}}@${{ github.server_url }}/${{ github.repository }}.git"
             git remote add repo ${remote_repo}
             git config http.sslVerify false
-            git config --local user.email "${{inputs.github_email}}"
-            git config --local user.name "${{inputs.github_username}}"
+            git config --local user.email "${{vars.GH_EMAIL}}"
+            git config --local user.name "${{vars.GH_USERNAME}}"
             git add .
             git commit -m "${{inputs.autoformat_message}}"
             git push -u repo ${{ github.head_ref }}

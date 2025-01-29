@@ -26,6 +26,15 @@ variable "auto_scaling" {
     max_instance_lifetime            = optional(number, 0)
     force_delete                     = optional(bool, false)
     ignore_failed_scaling_activities = optional(bool, false)
+    desired_capacity_type            = optional(string, "units")
+    traffic_source = optional(object({
+      identifier = string
+      type       = string
+    }), null)
+    instance_maintenance_policy = optional(object({
+      min_healthy_percentage = number
+      max_healthy_percentage = number
+    }), null)
     initial_lifecycle_hooks = optional(list(object({
       name                    = string
       lifecycle_transition    = string
@@ -37,6 +46,7 @@ variable "auto_scaling" {
     })), [])
     instance_refresh = optional(object({
       strategy = string
+      triggers = optional(list(string), [])
       preferences = optional(object({
         instance_warmup              = optional(number, 300)
         min_healthy_percentage       = optional(number, 90)
@@ -51,7 +61,6 @@ variable "auto_scaling" {
           alarms = list(string)
         }), null)
       }), null)
-      triggers = optional(list(string), [])
     }), null)
     warm_pool = optional(object({
       instance_reuse_policy = optional(object({

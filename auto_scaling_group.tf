@@ -1,5 +1,5 @@
 resource "aws_autoscaling_group" "asg" {
-  name                 = var.auto_scaling.project_name
+  name                 = var.project_name
   launch_configuration = aws_launch_configuration.lc.name
   min_size             = var.auto_scaling.min_size
   max_size             = var.auto_scaling.max_size
@@ -29,7 +29,6 @@ resource "aws_autoscaling_group" "asg" {
   ignore_failed_scaling_activities = var.auto_scaling.ignore_failed_scaling_activities
 
   desired_capacity_type = var.auto_scaling.desired_capacity_type
-
 
   dynamic "traffic_source" {
     for_each = var.auto_scaling.traffic_source == null ? [] : [1]
@@ -106,6 +105,33 @@ resource "aws_autoscaling_group" "asg" {
       max_group_prepared_capacity = var.auto_scaling.warm_pool.max_group_prepared_capacity
       min_size                    = var.auto_scaling.warm_pool.min_size
       pool_state                  = var.auto_scaling.warm_pool.pool_state
+    }
+  }
+  dynamic "mixed_instances_policy" {
+    for_each = var.auto_scaling.mixed_instances_policy == null ? [] : [1]
+    content {
+      instances_distribution {
+        on_demand_allocation_strategy            = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_allocation_strategy
+        on_demand_base_capacity                  = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_base_capacity
+        on_demand_percentage_above_base_capacity = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_percentage_above_base_capacity
+        spot_allocation_strategy                 = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_allocation_strategy
+        spot_instance_pools                      = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_instance_pools
+        spot_max_price                           = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_max_price
+      }
+
+      dynamic "launch_template" {
+        for_each = var.launch_template == null ? [] : [1]
+        content {
+          launch_template_specification {
+            launch_template_id = aws_launch_template.lt.id
+            version            = aws_launch_template.lt.latest_version
+          }
+
+          override {
+            instance_type = aws_launch_template.lt.instance_type
+          }
+        }
+      }
     }
   }
 }

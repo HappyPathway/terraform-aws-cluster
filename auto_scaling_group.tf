@@ -1,6 +1,7 @@
 resource "aws_autoscaling_group" "asg" {
   name                 = var.project_name
-  launch_configuration = aws_launch_configuration.lc.name
+  launch_configuration = var.launch_configuration == {} ? null : one(aws_launch_configuration.lc).name
+
   min_size             = var.auto_scaling.min_size
   max_size             = var.auto_scaling.max_size
   desired_capacity     = var.auto_scaling.desired_capacity
@@ -29,6 +30,14 @@ resource "aws_autoscaling_group" "asg" {
   ignore_failed_scaling_activities = var.auto_scaling.ignore_failed_scaling_activities
 
   desired_capacity_type = var.auto_scaling.desired_capacity_type
+
+  dynamic "launch_template" {
+    for_each = var.launch_template == null ? [] : [1]
+    content {
+      id      = aws_launch_template.lt.id
+      version = aws_launch_template.lt.latest_version
+    }
+  }
 
   dynamic "traffic_source" {
     for_each = var.auto_scaling.traffic_source == null ? [] : [1]
@@ -107,6 +116,7 @@ resource "aws_autoscaling_group" "asg" {
       pool_state                  = var.auto_scaling.warm_pool.pool_state
     }
   }
+
   dynamic "mixed_instances_policy" {
     for_each = var.auto_scaling.mixed_instances_policy == null ? [] : [1]
     content {

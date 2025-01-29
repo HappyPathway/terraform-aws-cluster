@@ -118,13 +118,11 @@ variable "ebs_block_devices" {
 variable "launch_configuration" {
   description = "Configuration for the launch configuration"
   type = object({
-    project_name                = string
+    project_name                = optional(string)
     iam_instance_profile        = optional(string, null)
-    instance_type               = string
     associate_public_ip_address = optional(bool, false)
     placement_tenancy           = optional(string, "default")
     key_name                    = optional(string, null)
-    security_group_ids          = optional(list(string), [])
     enable_monitoring           = optional(bool, false)
     ebs_optimized               = optional(bool, false)
     metadata_options = optional(object({
@@ -133,10 +131,7 @@ variable "launch_configuration" {
       http_endpoint               = optional(string, "enabled")
     }), {})
   })
-  default = {
-    project_name  = "my-project"
-    instance_type = "t2.micro"
-  }
+  default = {}
 }
 
 variable "placement_group" {
@@ -144,9 +139,194 @@ variable "placement_group" {
   type = object({
     name            = optional(string, null)
     strategy        = optional(string, "cluster")
-    tags            = optional(map(string), {})
     partition_count = optional(number, 2)
     spread_level    = optional(string, "rack")
   })
   default = null
+}
+
+variable "auto_scaling" {
+  description = "Configuration for the auto scaling group"
+  type = object({
+    project_name                     = string
+    min_size                         = number
+    max_size                         = number
+    desired_capacity                 = number
+    subnets                          = list(string)
+    availability_zones               = optional(list(string), [])
+    capacity_rebalance               = optional(bool, false)
+    default_cooldown                 = optional(number, 300)
+    default_instance_warmup          = optional(number, 300)
+    health_check_grace_period        = optional(number, 300)
+    health_check_type                = optional(string, "EC2")
+    load_balancers                   = optional(list(string), [])
+    target_group_arns                = optional(list(string), [])
+    termination_policies             = optional(list(string), [])
+    suspended_processes              = optional(list(string), [])
+    metrics_granularity              = optional(string, "1Minute")
+    enabled_metrics                  = optional(list(string), [])
+    wait_for_capacity_timeout        = optional(string, "10m")
+    min_elb_capacity                 = optional(number, 0)
+    wait_for_elb_capacity            = optional(number, 0)
+    protect_from_scale_in            = optional(bool, false)
+    service_linked_role_arn          = optional(string, null)
+    max_instance_lifetime            = optional(number, 0)
+    force_delete                     = optional(bool, false)
+    ignore_failed_scaling_activities = optional(bool, false)
+    desired_capacity_type            = optional(string, "units")
+    traffic_source = optional(object({
+      identifier = string
+      type       = string
+    }), null)
+    instance_maintenance_policy = optional(object({
+      min_healthy_percentage = number
+      max_healthy_percentage = number
+    }), null)
+    initial_lifecycle_hooks = optional(list(object({
+      name                    = string
+      lifecycle_transition    = string
+      notification_target_arn = string
+      role_arn                = string
+      notification_metadata   = optional(string, null)
+      heartbeat_timeout       = optional(number, 3600)
+      default_result          = optional(string, "CONTINUE")
+    })), [])
+    instance_refresh = optional(object({
+      strategy = string
+      triggers = list(string)
+      preferences = optional(object({
+        instance_warmup              = optional(number, 300)
+        min_healthy_percentage       = optional(number, 90)
+        checkpoint_percentages       = optional(list(number), [])
+        checkpoint_delay             = optional(number, 3600)
+        max_healthy_percentage       = optional(number, 100)
+        skip_matching                = optional(bool, false)
+        auto_rollback                = optional(bool, false)
+        scale_in_protected_instances = optional(bool, false)
+        standby_instances            = optional(bool, false)
+        alarm_specification = optional(object({
+          alarms = list(string)
+        }), null)
+      }), null)
+    }), null)
+    warm_pool = optional(object({
+      instance_reuse_policy = optional(object({
+        reuse_on_scale_in = bool
+      }), null)
+      max_group_prepared_capacity = optional(number, 0)
+      min_size                    = optional(number, 0)
+      pool_state                  = optional(string, "Stopped")
+    }), null)
+    mixed_instances_policy = optional(object({
+      instances_distribution = optional(object({
+        on_demand_allocation_strategy            = optional(string, "prioritized")
+        on_demand_base_capacity                  = optional(number, 0)
+        on_demand_percentage_above_base_capacity = optional(number, 100)
+        spot_allocation_strategy                 = optional(string, "lowest-price")
+        spot_instance_pools                      = optional(number, 2)
+        spot_max_price                           = optional(string, "")
+      }), null)
+      launch_template = optional(object({
+        launch_template_specification = object({
+          launch_template_id = string
+          version            = optional(string, "$Latest")
+        })
+        override = optional(list(object({
+          instance_type = string
+        })), [])
+      }), null)
+    }), null)
+  })
+}
+
+variable "launch_template" {
+  description = "Configuration for the launch template"
+  type = object({
+    block_device_mappings = list(object({
+      device_name = string
+      ebs = object({
+        volume_size = number
+        volume_type = string
+      })
+    }))
+    capacity_reservation_specification = list(object({
+      capacity_reservation_preference = string
+    }))
+    cpu_options = list(object({
+      core_count       = number
+      threads_per_core = number
+    }))
+    credit_specification = list(object({
+      cpu_credits = string
+    }))
+    elastic_gpu_specifications = list(object({
+      type = string
+    }))
+    elastic_inference_accelerator = list(object({
+      type = string
+    }))
+    enclave_options = list(object({
+      enabled = bool
+    }))
+    hibernation_options = list(object({
+      configured = bool
+    }))
+    iam_instance_profile = list(object({
+      name = string
+    }))
+    instance_market_options = list(object({
+      market_type = string
+      spot_options = object({
+        block_duration_minutes         = number
+        instance_interruption_behavior = string
+        max_price                      = string
+        spot_instance_type             = string
+        valid_until                    = string
+      })
+    }))
+    instance_requirements = list(object({
+      vcpu_count = object({
+        min = number
+        max = number
+      })
+      memory_mib = object({
+        min = number
+        max = number
+      })
+    }))
+    license_specification = list(object({
+      license_configuration_arn = string
+    }))
+    maintenance_options = list(object({
+      auto_recovery = string
+    }))
+    metadata_options = list(object({
+      http_endpoint               = string
+      http_put_response_hop_limit = number
+      http_tokens                 = string
+      instance_metadata_tags      = string
+    }))
+    network_interfaces = list(object({
+      associate_public_ip_address = bool
+      subnet_id                   = string
+    }))
+    placement = list(object({
+      availability_zone = string
+    }))
+    private_dns_name_options = list(object({
+      enable_resource_name_dns_aaaa_record = bool
+      enable_resource_name_dns_a_record    = bool
+      hostname_type                        = string
+    }))
+    tag_specifications = list(object({
+      resource_type = string
+      tags          = map(string)
+    }))
+  })
+  default = null
+}
+
+variable "vpc_cluster" {
+  type    = bool
+  default = true
 }

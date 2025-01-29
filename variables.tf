@@ -294,6 +294,8 @@ variable "launch_template" {
         max = number
       })
     }))
+    kernel_id = optional(string)
+    key_name  = optional(string)
     license_specification = list(object({
       license_configuration_arn = string
     }))
@@ -318,6 +320,7 @@ variable "launch_template" {
       enable_resource_name_dns_a_record    = bool
       hostname_type                        = string
     }))
+    ram_disk_id = optional(string)
     tag_specifications = list(object({
       resource_type = string
       tags          = map(string)

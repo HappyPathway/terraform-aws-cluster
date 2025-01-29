@@ -264,7 +264,7 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = var.auto_scaling.max_size
   desired_capacity     = var.auto_scaling.desired_capacity
   vpc_zone_identifier  = var.auto_scaling.subnets
-  placement_group      = var.placement_group == null ? null : aws_placement_group.pg.name
+  placement_group      = var.placement_group == null ? null : one(aws_placement_group.pg).name
 
   availability_zones               = var.auto_scaling.availability_zones
   capacity_rebalance               = var.auto_scaling.capacity_rebalance
@@ -312,34 +312,29 @@ resource "aws_autoscaling_group" "asg" {
   dynamic "instance_refresh" {
     for_each = var.auto_scaling.instance_refresh == null ? [] : [1]
     content {
-      strategy               = var.auto_scaling.instance_refresh.strategy
-      preferences            {
-        var.auto_scaling.instance_refresh.preferences
-      checkpoint_delay       = var.auto_scaling.instance_refresh.checkpoint_delay
-      checkpoint_percentages = var.auto_scaling.instance_refresh.checkpoint_percentages
-      instance_warmup        = var.auto_scaling.instance_refresh.instance_warmup
-      max_healthy_percentage = var.auto_scaling.instance_refresh.max_healthy_percentage
-      min_healthy_percentage = var.auto_scaling.instance_refresh.min_healthy_percentage
-      skip_matching          = var.auto_scaling.instance_refresh.skip_matching
-      auto_rollback          = var.auto_scaling.instance_refresh.auto_rollback
-      alarm_specification {
-        alarms = var.auto_scaling.instance_refresh.alarm_specification.alarms
+      strategy = var.auto_scaling.instance_refresh.strategy
+      triggers = var.auto_scaling.instance_refresh.triggers
+      dynamic "preferences" {
+        for_each = var.auto_scaling.instance_refresh.preferences == null ? [] : [1]
+        content {
+          instance_warmup              = var.auto_scaling.instance_refresh.preferences.instance_warmup
+          min_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.min_healthy_percentage
+          checkpoint_percentages       = var.auto_scaling.instance_refresh.preferences.checkpoint_percentages
+          checkpoint_delay             = var.auto_scaling.instance_refresh.preferences.checkpoint_delay
+          max_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.max_healthy_percentage
+          skip_matching                = var.auto_scaling.instance_refresh.preferences.skip_matching
+          auto_rollback                = var.auto_scaling.instance_refresh.preferences.auto_rollback
+          scale_in_protected_instances = var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances
+          standby_instances            = var.auto_scaling.instance_refresh.preferences.standby_instances
+          dynamic "alarm_specification" {
+            for_each = var.auto_scaling.instance_refresh.preferences.alarm_specification == null ? [] : [1]
+            content {
+              alarms = var.auto_scaling.instance_refresh.preferences.alarm_specification.alarms
+            }
+          }
+        }
       }
-      scale_in_protected_instances = var.auto_scaling.instance_refresh.scale_in_protected_instances
-      standby_instances            = var.auto_scaling.instance_refresh.standby_instances
-      triggers                     = var.auto_scaling.instance_refresh.triggers
     }
   }
 
-  dynamic "warm_pool" {
-    for_each = var.auto_scaling.warm_pool == null ? [] : [1]
-    content {
-      instance_reuse_policy {
-        reuse_on_scale_in = var.auto_scaling.warm_pool.instance_reuse_policy.reuse_on_scale_in
-      }
-      max_group_prepared_capacity = var.auto_scaling.warm_pool.max_group_prepared_capacity
-      min_size                    = var.auto_scaling.warm_pool.min_size
-      pool_state                  = var.auto_scaling.warm_pool.pool_state
-    }
-  }
 }

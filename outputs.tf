@@ -3,7 +3,7 @@ output "ami" {
 }
 
 output "launch_configuration" {
-  value = aws_launch_configuration.lc
+  value = local.launch_configuration
 }
 
 output "cloud_init" {

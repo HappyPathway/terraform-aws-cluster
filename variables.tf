@@ -118,6 +118,7 @@ variable "ebs_block_devices" {
 variable "launch_configuration" {
   description = "Configuration for the launch configuration"
   type = object({
+    managed                     = optional(bool, false)
     iam_instance_profile        = optional(string, null)
     associate_public_ip_address = optional(bool, false)
     placement_tenancy           = optional(string, "default")

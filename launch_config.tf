@@ -1,7 +1,7 @@
 
 resource "aws_launch_configuration" "lc" {
   count                       = var.launch_configuration == {} ? 0 : 1
-  name_prefix                 = "${var.launch_configuration.project_name}-"
+  name_prefix                 = "${var.project_name}-"
   image_id                    = data.aws_ami.ami.id
   iam_instance_profile        = var.launch_configuration.iam_instance_profile
   instance_type               = var.instance_type

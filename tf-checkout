@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+import subprocess
+import shutil
+import os
+
+def run_command(command):
+    print(f"Running command: {command}")
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        raise Exception(f"Error running command: {command}\n{stderr}")
+    return stdout
+
+def get_provider_versions():
+    print("Getting provider versions from .terraform/providers directory...")
+    provider_versions = {}
+    providers_dir = ".terraform/providers"
+    for registry in os.listdir(providers_dir):
+        registry_path = os.path.join(providers_dir, registry)
+        if os.path.isdir(registry_path):
+            for vendor in os.listdir(registry_path):
+                vendor_path = os.path.join(registry_path, vendor)
+                if os.path.isdir(vendor_path):
+                    for provider in os.listdir(vendor_path):
+                        provider_path = os.path.join(vendor_path, provider)
+                        if os.path.isdir(provider_path):
+                            versions = os.listdir(provider_path)
+                            if versions:
+                                latest_version = sorted(versions, reverse=True)[0]
+                                provider_name = f"{registry}/{vendor}/{provider}"
+                                provider_versions[provider_name] = {
+                                    "version": latest_version,
+                                    "vendor": vendor
+                                }
+                                print(f"Found provider: {provider_name}, version: {latest_version}, vendor: {vendor}")
+    return provider_versions
+
+def git_pull_and_checkout(repo_url, base_dir, tag):
+    repo_name = repo_url.split('/')[-1].replace('.git', '')
+    # try:
+    #     shutil.rmtree(f"{base_dir}/{repo_name}")
+    # except FileNotFoundError:
+    #     pass
+    os.system(f"git clone {repo_url} {base_dir}/{repo_name} || echo 'repo alredy cloned'")
+    print("Cloned repository. changing directory... {0}".format(os.path.join(base_dir, repo_name)))
+    os.chdir(os.path.join(base_dir, repo_name))
+    print(f"Pulling latest changes in repository: {repo_name}")
+    try:
+        run_command("git pull")
+    except Exception as e:
+        print(f"Error pulling repository: {repo_name}, {e}")
+    # git tag --list | grep 5.84.0
+    actual_tag = run_command(f"git tag --list | grep {tag}").strip()
+    actual_tag = actual_tag.decode('utf-8').strip()
+    print(f"Found tag: {actual_tag}")
+    print(f"Checking out tag: {actual_tag}")
+    run_command(f"git checkout tags/{actual_tag}")
+    os.chdir("..")
+
+def main():
+    base_dir = os.environ.get("GIT_BASE_DIR", os.path.join(os.environ.get("HOME"), "git"))
+    print("Initializing Terraform with upgrade...")
+    run_command("terraform init -upgrade")
+    provider_versions = get_provider_versions()
+    for provider, provider_info in provider_versions.items():
+        vendor = provider_info.get("vendor")
+        version = provider_info.get('version')
+        provider_name = provider.split('/')[-1]
+        repo_url = f"https://github.com/{vendor}/terraform-provider-{provider_name}.git"
+        print(f"Processing provider: {provider_name}, version: {version}")
+        git_pull_and_checkout(repo_url, base_dir, version)
+
+if __name__ == "__main__":
+    main()

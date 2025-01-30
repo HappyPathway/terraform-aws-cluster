@@ -118,7 +118,6 @@ variable "ebs_block_devices" {
 variable "launch_configuration" {
   description = "Configuration for the launch configuration"
   type = object({
-    project_name                = optional(string)
     iam_instance_profile        = optional(string, null)
     associate_public_ip_address = optional(bool, false)
     placement_tenancy           = optional(string, "default")
@@ -148,7 +147,6 @@ variable "placement_group" {
 variable "auto_scaling" {
   description = "Configuration for the auto scaling group"
   type = object({
-    project_name                     = string
     min_size                         = number
     max_size                         = number
     desired_capacity                 = number

@@ -7,7 +7,6 @@
 # it will also need to take in a list of volume mappings that will be applied to the launch configuration
 # it will also need to take in the instance type that will be used for the launch configuration
 # it will also need to take in the key name that will be used for the launch configuration
-
 data "aws_ami" "ami" {
   most_recent      = var.ami.most_recent
   owners           = var.ami.owners
@@ -21,7 +20,6 @@ data "aws_ami" "ami" {
     }
   }
 }
-
 
 data "cloudinit_config" "cloud_init" {
   gzip          = false
@@ -45,4 +43,25 @@ data "cloudinit_config" "cloud_init" {
       content      = file("${path.module}/${part.value.filename}")
     }
   }
+}
+
+resource "aws_autoscaling_group" "asg" {
+  availability_zones   = ["us-west-2a"]
+  name                 = "test-asg"
+  max_size             = 3
+  min_size             = 1
+  desired_capacity     = 2
+  launch_configuration = aws_launch_configuration.lc.id
+}
+
+resource "aws_launch_configuration" "lc" {
+  name          = "test-lc"
+  image_id      = "ami-12345678"
+  instance_type = "t2.micro"
+}
+
+module "autoscaling_schedule" {
+  source = "./autoscaling_schedule"
+
+  autoscaling_schedule = var.autoscaling_schedule
 }

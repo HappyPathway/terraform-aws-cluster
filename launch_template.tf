@@ -2,7 +2,7 @@ resource "aws_launch_template" "lt" {
   count         = var.launch_template == null ? 0 : 1
   name          = var.project_name
   image_id      = data.aws_ami.ami.id
-  instance_type = var.instance_type
+  instance_type = var.launch_template.instance_type
 
   dynamic "block_device_mappings" {
     for_each = var.launch_template.block_device_mappings

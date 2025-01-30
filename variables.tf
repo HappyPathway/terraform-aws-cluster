@@ -1,147 +1,15 @@
-variable "tags" {
-  description = "Arbitrary tags that will be applied to all resources created in this module"
-  type        = map(string)
-}
-
-variable "subnets" {
-  description = "List of subnets that the autoscaling group will be deployed to"
-  type        = list(string)
-}
-
-variable "security_group_ids" {
-  description = "List of security group IDs that will be applied to the autoscaling group"
-  type        = list(string)
-}
-
-variable "project_name" {
-  description = "Project name used to find the appropriate AMI for the launch configuration"
-  type        = string
-}
-
-variable "cloud_init_config" {
-  description = "Cloud-init configuration that will be appended to user-data for the launch configuration"
-  type = list(object({
-    path    = string
-    content = string
-  }))
-  default = []
-}
-
-variable "volume_mappings" {
-  description = "List of volume mappings that will be applied to the launch configuration"
-  type        = list(map(string))
-}
-
-variable "instance_type" {
-  description = "Instance type that will be used for the launch configuration"
-  type        = string
-}
-
-variable "key_name" {
-  description = "Key name that will be used for the launch configuration"
-  type        = string
-}
-
-variable "file_list" {
-  description = "List of files to be included in the configuration"
-  type = list(object({
-    filename     = string
-    content_type = string
-  }))
-  default = []
-}
-
-# propagate_tags_at_launch
-variable "propagate_tags_at_launch" {
-  description = "Specifies whether tags are propagated to the instances in the Auto Scaling group"
-  type        = bool
-  default     = true
-}
-
-# min_size
-variable "min_size" {
-  description = "Minimum size of the autoscaling group"
-  type        = number
-  default     = 1
-}
-
-# max_size
-variable "max_size" {
-  description = "Maximum size of the autoscaling group"
-  type        = number
-  default     = 3
-}
-
-# desired_capacity
-variable "desired_capacity" {
-  description = "Desired capacity of the autoscaling group"
-  type        = number
-  default     = 2
-}
-
-variable "ephemeral_block_devices" {
-  type = list(object({
-    device_name  = string
-    virtual_name = string
-    no_device    = optional(bool, false)
-  }))
-  default = []
-}
-
-variable "root_volume" {
+variable "ami" {
+  description = "Configuration for the AMI data source"
   type = object({
-    iops                  = optional(number, 0)
-    throughput            = optional(number, 0)
-    delete_on_termination = optional(bool, true)
-    encrypted             = optional(bool, false)
-    volume_size           = optional(number, 8)
-    volume_type           = optional(string, "gp2")
+    most_recent      = optional(bool, true)
+    owners           = optional(list(string), ["self"])
+    executable_users = optional(list(string), ["self"])
+    name_regex       = optional(string, null)
+    filters = optional(list(object({
+      name   = string
+      values = list(string)
+    })), [])
   })
-  default = {}
-}
-
-variable "ebs_block_devices" {
-  type = list(object({
-    device_name           = string
-    snapshot_id           = optional(string, null)
-    iops                  = optional(number, 0)
-    throughput            = optional(number, 0)
-    delete_on_termination = optional(bool, true)
-    encrypted             = optional(bool, false)
-    no_device             = optional(bool, false)
-    volume_size           = optional(number, 8)
-    volume_type           = optional(string, "gp2")
-  }))
-  default = []
-}
-
-variable "launch_configuration" {
-  description = "Configuration for the launch configuration"
-  type = object({
-    iam_instance_profile        = optional(string, null)
-    associate_public_ip_address = optional(bool, false)
-    placement_tenancy           = optional(string, "default")
-    key_name                    = optional(string, null)
-    enable_monitoring           = optional(bool, false)
-    ebs_optimized               = optional(bool, false)
-    metadata_options = optional(object({
-      http_tokens                 = optional(string, "optional")
-      http_put_response_hop_limit = optional(number, 1)
-      http_endpoint               = optional(string, "enabled")
-    }), {})
-  })
-  default = {}
-}
-
-variable "placement_group" {
-  description = "Configuration for the placement group"
-  type = object({
-    name            = optional(string, null)
-    strategy        = optional(string, "cluster")
-    partition_count = optional(number, 2)
-    spread_level    = optional(string, "rack")
-  })
-  default = null
 }
 
 variable "auto_scaling" {
@@ -235,105 +103,7 @@ variable "auto_scaling" {
       }), null)
     }), null)
   })
-}
-
-variable "launch_template" {
-  description = "Configuration for the launch template"
-  type = object({
-    block_device_mappings = list(object({
-      device_name = string
-      ebs = object({
-        volume_size = number
-        volume_type = string
-      })
-    }))
-    capacity_reservation_specification = list(object({
-      capacity_reservation_preference = string
-    }))
-    cpu_options = list(object({
-      core_count       = number
-      threads_per_core = number
-    }))
-    credit_specification = list(object({
-      cpu_credits = string
-    }))
-    elastic_gpu_specifications = list(object({
-      type = string
-    }))
-    elastic_inference_accelerator = list(object({
-      type = string
-    }))
-    enclave_options = list(object({
-      enabled = bool
-    }))
-    hibernation_options = list(object({
-      configured = bool
-    }))
-    iam_instance_profile = list(object({
-      name = string
-    }))
-    instance_market_options = list(object({
-      market_type = string
-      spot_options = object({
-        block_duration_minutes         = number
-        instance_interruption_behavior = string
-        max_price                      = string
-        spot_instance_type             = string
-        valid_until                    = string
-      })
-    }))
-    instance_requirements = list(object({
-      vcpu_count = object({
-        min = number
-        max = number
-      })
-      memory_mib = object({
-        min = number
-        max = number
-      })
-    }))
-
-    kernel_id = optional(string)
-    key_name  = optional(string)
-
-    license_specification = list(object({
-      license_configuration_arn = string
-    }))
-    maintenance_options = list(object({
-      auto_recovery = string
-    }))
-    metadata_options = list(object({
-      http_endpoint               = string
-      http_put_response_hop_limit = number
-      http_tokens                 = string
-      instance_metadata_tags      = string
-    }))
-    network_interfaces = list(object({
-      associate_public_ip_address = bool
-      subnet_id                   = string
-    }))
-    placement = list(object({
-      availability_zone = string
-    }))
-    private_dns_name_options = list(object({
-      enable_resource_name_dns_aaaa_record = bool
-      enable_resource_name_dns_a_record    = bool
-      hostname_type                        = string
-    }))
-
-    ram_disk_id = optional(string)
-
-    tag_specifications = list(object({
-      resource_type = string
-      tags          = map(string)
-    }))
-  })
   default = null
-}
-
-variable "vpc_cluster" {
-  type    = bool
-  default = true
 }
 
 variable "auto_scaling_policy" {
@@ -469,6 +239,7 @@ variable "auto_scaling_policy" {
       scheduling_buffer_time = optional(number)
     }))
   })
+  default = null
 }
 
 variable "autoscaling_attachment" {
@@ -480,14 +251,6 @@ variable "autoscaling_attachment" {
   default = null
 }
 
-variable "autoscaling_traffic_source_attachment" {
-  description = "Configuration for the autoscaling traffic source attachment"
-  type = object({
-    identifier = string
-    type       = string
-  })
-  default = null
-}
 variable "autoscaling_schedule" {
   description = "List of autoscaling schedules"
   type = list(object({
@@ -502,6 +265,175 @@ variable "autoscaling_schedule" {
   default = []
 }
 
+variable "autoscaling_traffic_source_attachment" {
+  description = "Configuration for the autoscaling traffic source attachment"
+  type = object({
+    identifier = string
+    type       = string
+  })
+  default = null
+}
+
+variable "cloud_init_config" {
+  description = "Cloud-init configuration that will be appended to user-data for the launch configuration"
+  type = list(object({
+    path    = string
+    content = string
+  }))
+  default = []
+}
+
+variable "ebs_block_devices" {
+  type = list(object({
+    device_name           = string
+    snapshot_id           = optional(string, null)
+    iops                  = optional(number, 0)
+    throughput            = optional(number, 0)
+    delete_on_termination = optional(bool, true)
+    encrypted             = optional(bool, false)
+    no_device             = optional(bool, false)
+    volume_size           = optional(number, 8)
+    volume_type           = optional(string, "gp2")
+  }))
+  default = []
+}
+
+variable "ephemeral_block_devices" {
+  type = list(object({
+    device_name  = string
+    virtual_name = string
+    no_device    = optional(bool, false)
+  }))
+  default = []
+}
+
+variable "file_list" {
+  description = "List of files to be included in the configuration"
+  type = list(object({
+    filename     = string
+    content_type = string
+  }))
+  default = []
+}
+
+variable "instance_type" {
+  description = "Instance type that will be used for the launch configuration"
+  type        = string
+}
+
+variable "launch_configuration" {
+  description = "Configuration for the launch configuration"
+  type = object({
+    iam_instance_profile        = optional(string, null)
+    associate_public_ip_address = optional(bool, false)
+    placement_tenancy           = optional(string, "default")
+    key_name                    = optional(string, null)
+    enable_monitoring           = optional(bool, false)
+    ebs_optimized               = optional(bool, false)
+    metadata_options = optional(object({
+      http_tokens                 = optional(string, "optional")
+      http_put_response_hop_limit = optional(number, 1)
+      http_endpoint               = optional(string, "enabled")
+    }), {})
+  })
+  default = {}
+}
+
+variable "launch_template" {
+  description = "Configuration for the launch template"
+  type = object({
+    block_device_mappings = list(object({
+      device_name = string
+      ebs = object({
+        volume_size = number
+        volume_type = string
+      })
+    }))
+    capacity_reservation_specification = list(object({
+      capacity_reservation_preference = string
+    }))
+    cpu_options = list(object({
+      core_count       = number
+      threads_per_core = number
+    }))
+    credit_specification = list(object({
+      cpu_credits = string
+    }))
+    elastic_gpu_specifications = list(object({
+      type = string
+    }))
+    elastic_inference_accelerator = list(object({
+      type = string
+    }))
+    enclave_options = list(object({
+      enabled = bool
+    }))
+    hibernation_options = list(object({
+      configured = bool
+    }))
+    iam_instance_profile = list(object({
+      name = string
+    }))
+    instance_type = string
+    instance_market_options = list(object({
+      market_type = string
+      spot_options = object({
+        block_duration_minutes         = number
+        instance_interruption_behavior = string
+        max_price                      = string
+        spot_instance_type             = string
+        valid_until                    = string
+      })
+    }))
+    instance_requirements = list(object({
+      vcpu_count = object({
+        min = number
+        max = number
+      })
+      memory_mib = object({
+        min = number
+        max = number
+      })
+    }))
+
+    kernel_id = optional(string)
+    key_name  = optional(string)
+
+    license_specification = list(object({
+      license_configuration_arn = string
+    }))
+    maintenance_options = list(object({
+      auto_recovery = string
+    }))
+    metadata_options = list(object({
+      http_endpoint               = string
+      http_put_response_hop_limit = number
+      http_tokens                 = string
+      instance_metadata_tags      = string
+    }))
+    network_interfaces = list(object({
+      associate_public_ip_address = bool
+      subnet_id                   = string
+    }))
+    placement = list(object({
+      availability_zone = string
+    }))
+    private_dns_name_options = list(object({
+      enable_resource_name_dns_aaaa_record = bool
+      enable_resource_name_dns_a_record    = bool
+      hostname_type                        = string
+    }))
+
+    ram_disk_id = optional(string)
+
+    tag_specifications = list(object({
+      resource_type = string
+      tags          = map(string)
+    }))
+  })
+  default = null
+}
+
 variable "lifecycle_hooks" {
   type = list(object({
     name                    = string
@@ -512,4 +444,54 @@ variable "lifecycle_hooks" {
     notification_target_arn = string
     role_arn                = string
   }))
+  default = null
+}
+
+variable "placement_group" {
+  description = "Configuration for the placement group"
+  type = object({
+    name            = optional(string, null)
+    strategy        = optional(string, "cluster")
+    partition_count = optional(number, 2)
+    spread_level    = optional(string, "rack")
+  })
+  default = null
+}
+
+variable "project_name" {
+  description = "Project name used to find the appropriate AMI for the launch configuration"
+  type        = string
+}
+
+variable "propagate_tags_at_launch" {
+  description = "Specifies whether tags are propagated to the instances in the Auto Scaling group"
+  type        = bool
+  default     = true
+}
+
+variable "root_volume" {
+  type = object({
+    iops                  = optional(number, 0)
+    throughput            = optional(number, 0)
+    delete_on_termination = optional(bool, true)
+    encrypted             = optional(bool, false)
+    volume_size           = optional(number, 8)
+    volume_type           = optional(string, "gp2")
+  })
+  default = {}
+}
+
+variable "security_group_ids" {
+  description = "List of security group IDs that will be applied to the autoscaling group"
+  type        = list(string)
+}
+
+variable "tags" {
+  description = "Arbitrary tags that will be applied to all resources created in this module"
+  type        = map(string)
+}
+
+variable "vpc_cluster" {
+  type    = bool
+  default = true
 }

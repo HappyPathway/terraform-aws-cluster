@@ -337,3 +337,138 @@ variable "vpc_cluster" {
   type    = bool
   default = true
 }
+
+variable "auto_scaling_policy" {
+  description = "Configuration for the auto scaling policy"
+  type = object({
+    name                      = string
+    scaling_adjustment        = optional(number)
+    adjustment_type           = optional(string)
+    cooldown                  = optional(number)
+    policy_type               = optional(string)
+    estimated_instance_warmup = optional(number)
+    metric_aggregation_type   = optional(string)
+    step_adjustment = optional(list(object({
+      scaling_adjustment          = number
+      metric_interval_lower_bound = optional(number)
+      metric_interval_upper_bound = optional(number)
+    })))
+    target_tracking_configuration = optional(object({
+      predefined_metric_specification = optional(object({
+        predefined_metric_type = string
+        resource_label         = optional(string)
+      }))
+      customized_metric_specification = optional(object({
+        metric_dimension = optional(list(object({
+          name  = string
+          value = string
+        })))
+        metric_name = string
+        namespace   = string
+        statistic   = string
+        unit        = optional(string)
+        metrics = optional(list(object({
+          expression = optional(string)
+          id         = string
+          label      = optional(string)
+          metric_stat = optional(object({
+            metric = object({
+              dimensions = optional(list(object({
+                name  = string
+                value = string
+              })))
+              metric_name = string
+              namespace   = string
+            })
+            stat = string
+            unit = optional(string)
+          }))
+          return_data = optional(bool)
+        })))
+      }))
+      target_value     = number
+      disable_scale_in = optional(bool, false)
+    }))
+    predictive_scaling_configuration = optional(object({
+      max_capacity_breach_behavior = optional(string)
+      max_capacity_buffer          = optional(number)
+      metric_specification = object({
+        target_value = number
+        customized_capacity_metric_specification = optional(object({
+          metric_data_queries = list(object({
+            expression = optional(string)
+            id         = string
+            label      = optional(string)
+            metric_stat = optional(object({
+              metric = object({
+                dimensions = optional(list(object({
+                  name  = string
+                  value = string
+                })))
+                metric_name = string
+                namespace   = string
+              })
+              stat = string
+              unit = optional(string)
+            }))
+            return_data = optional(bool)
+          }))
+        }))
+        customized_load_metric_specification = optional(object({
+          metric_data_queries = list(object({
+            expression = optional(string)
+            id         = string
+            label      = optional(string)
+            metric_stat = optional(object({
+              metric = object({
+                dimensions = optional(list(object({
+                  name  = string
+                  value = string
+                })))
+                metric_name = string
+                namespace   = string
+              })
+              stat = string
+              unit = optional(string)
+            }))
+            return_data = optional(bool)
+          }))
+        }))
+        customized_scaling_metric_specification = optional(object({
+          metric_data_queries = list(object({
+            expression = optional(string)
+            id         = string
+            label      = optional(string)
+            metric_stat = optional(object({
+              metric = object({
+                dimensions = optional(list(object({
+                  name  = string
+                  value = string
+                })))
+                metric_name = string
+                namespace   = string
+              })
+              stat = string
+              unit = optional(string)
+            }))
+            return_data = optional(bool)
+          }))
+        }))
+        predefined_load_metric_specification = optional(object({
+          predefined_metric_type = string
+          resource_label         = string
+        }))
+        predefined_metric_pair_specification = optional(object({
+          predefined_metric_type = string
+          resource_label         = string
+        }))
+        predefined_scaling_metric_specification = optional(object({
+          predefined_metric_type = string
+          resource_label         = string
+        }))
+      })
+      mode                   = optional(string)
+      scheduling_buffer_time = optional(number)
+    }))
+  })
+}

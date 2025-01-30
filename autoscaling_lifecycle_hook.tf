@@ -2,7 +2,7 @@ resource "aws_autoscaling_lifecycle_hook" "hook" {
   for_each = { for hook in var.lifecycle_hooks : hook.name => hook }
 
   name                    = each.value.name
-  autoscaling_group_name  = one(aws_autoscaling_group.asg).name
+  autoscaling_group_name  = one(local.autoscaling_group).name
   default_result          = each.value.default_result
   heartbeat_timeout       = each.value.heartbeat_timeout
   lifecycle_transition    = each.value.lifecycle_transition

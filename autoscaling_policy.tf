@@ -1,13 +1,14 @@
 # aws_autoscaling_policy
 resource "aws_autoscaling_policy" "asg_policy" {
+  count                     = var.auto_scaling_policy == null ? 0 : 1
   name                      = var.auto_scaling_policy.name
   scaling_adjustment        = var.auto_scaling_policy.scaling_adjustment
   adjustment_type           = var.auto_scaling_policy.adjustment_type
   cooldown                  = var.auto_scaling_policy.cooldown
   policy_type               = var.auto_scaling_policy.policy_type
   estimated_instance_warmup = var.auto_scaling_policy.estimated_instance_warmup
-  autoscaling_group_name    = aws_autoscaling_group.asg.name
-  depends_on                = [aws_autoscaling_group.asg]
+  autoscaling_group_name    = local.autoscaling_group.name
+  depends_on                = [local.autoscaling_group]
 
   # Optional attributes for StepScaling policies
   metric_aggregation_type = var.auto_scaling_policy.metric_aggregation_type

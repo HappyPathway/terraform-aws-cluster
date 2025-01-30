@@ -185,7 +185,7 @@ resource "aws_launch_template" "lt" {
 
   update_default_version = true
 
-  user_data = data.cloudinit_config.cloud_init.rendered
+  user_data = local.cloud_init
 
   vpc_security_group_ids = var.vpc_cluster ? var.security_group_ids : null
 }

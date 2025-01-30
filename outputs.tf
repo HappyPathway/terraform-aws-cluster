@@ -11,5 +11,5 @@ output "cloud_init" {
 }
 
 output "autoscaling_group" {
-  value = aws_autoscaling_group.asg
+  value = local.autoscaling_group
 }

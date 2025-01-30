@@ -1,6 +1,7 @@
 resource "aws_autoscaling_group" "asg" {
+  count                = var.auto_scaling.create ? 0 : 1
   name                 = var.project_name
-  launch_configuration = var.launch_configuration == {} ? null : one(aws_launch_configuration.lc).name
+  launch_configuration = var.launch_configuration.use_launch_configuration ? local.launch_configuration.name : null
 
   min_size            = var.auto_scaling.min_size
   max_size            = var.auto_scaling.max_size
@@ -144,4 +145,13 @@ resource "aws_autoscaling_group" "asg" {
       }
     }
   }
+}
+
+data aws_autoscaling_group asg {
+  count = var.auto_scaling.create == false ? 0 : 1
+  name  = var.project_name
+}
+
+locals {
+  autoscaling_group = var.auto_scaling.create ? one(aws_autoscaling_group.asg) : one(data.aws_autoscaling_group.asg)
 }

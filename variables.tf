@@ -2,8 +2,8 @@ variable "ami" {
   description = "Configuration for the AMI data source"
   type = object({
     most_recent      = optional(bool, true)
-    owners           = optional(list(string), ["self"])
-    executable_users = optional(list(string), ["self"])
+    owners           = optional(list(string), null)
+    executable_users = optional(list(string), null)
     name_regex       = optional(string, null)
     filters = optional(list(object({
       name   = string
@@ -15,11 +15,12 @@ variable "ami" {
 variable "auto_scaling" {
   description = "Configuration for the auto scaling group"
   type = object({
+    create                           = bool
     min_size                         = number
     max_size                         = number
     desired_capacity                 = number
-    subnets                          = list(string)
-    availability_zones               = optional(list(string), [])
+    subnets                          = optional(list(string), null)
+    availability_zones               = optional(list(string), null)
     capacity_rebalance               = optional(bool, false)
     default_cooldown                 = optional(number, 300)
     default_instance_warmup          = optional(number, 300)
@@ -103,7 +104,13 @@ variable "auto_scaling" {
       }), null)
     }), null)
   })
-  default = null
+  default = {
+    create           = false
+    min_size         = 0
+    max_size         = 0
+    desired_capacity = 0
+    subnets          = []
+  }
 }
 
 variable "auto_scaling_policy" {
@@ -324,6 +331,9 @@ variable "instance_type" {
 variable "launch_configuration" {
   description = "Configuration for the launch configuration"
   type = object({
+    create                      = optional(bool, false)
+    use_launch_configuration    = optional(bool, false)
+    name                        = optional(string, null)
     iam_instance_profile        = optional(string, null)
     associate_public_ip_address = optional(bool, false)
     placement_tenancy           = optional(string, "default")
@@ -444,7 +454,7 @@ variable "lifecycle_hooks" {
     notification_target_arn = string
     role_arn                = string
   }))
-  default = null
+  default = []
 }
 
 variable "placement_group" {

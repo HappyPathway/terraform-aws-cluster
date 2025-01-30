@@ -1,6 +1,6 @@
 
 resource "aws_launch_configuration" "lc" {
-  count                       = var.launch_configuration == {} ? 0 : 1
+  count                       = var.launch_configuration.create ? 0 : 1
   name_prefix                 = "${var.project_name}-"
   image_id                    = data.aws_ami.ami.id
   iam_instance_profile        = var.launch_configuration.iam_instance_profile
@@ -9,24 +9,24 @@ resource "aws_launch_configuration" "lc" {
   placement_tenancy           = var.launch_configuration.placement_tenancy
   key_name                    = var.launch_configuration.key_name
   security_groups             = var.security_group_ids
-  user_data                   = data.cloudinit_config.cloud_init.rendered
+  user_data                   = local.cloud_init
   enable_monitoring           = var.launch_configuration.enable_monitoring
   ebs_optimized               = var.launch_configuration.ebs_optimized
 
   dynamic "metadata_options" {
     for_each = var.launch_configuration.metadata_options == null ? [] : [1]
     content {
-      http_tokens                 = var.launch_configuration.http_tokens
-      http_put_response_hop_limit = var.launch_configuration.http_put_response_hop_limit
-      http_endpoint               = var.launch_configuration.http_endpoint
+      http_tokens                 = var.launch_configuration.metadata_options.http_tokens
+      http_put_response_hop_limit = var.launch_configuration.metadata_options.http_put_response_hop_limit
+      http_endpoint               = var.launch_configuration.metadata_options.http_endpoint
     }
   }
 
   dynamic "root_block_device" {
-    for_each = var.root_volume.volume_size > 0 ? [1] : []
+    for_each = var.root_volume.volume_size > 0 ? [var.root_volume] : []
     content {
       iops                  = root_block_device.value.iops
-      throughput            = root_block_device
+      throughput            = root_block_device.value.throughput
       delete_on_termination = root_block_device.value.delete_on_termination
       encrypted             = root_block_device.value.encrypted
       volume_size           = root_block_device.value.volume_size
@@ -61,4 +61,13 @@ resource "aws_launch_configuration" "lc" {
   lifecycle {
     ignore_changes = [image_id]
   }
+}
+
+data aws_launch_configuration "lc" {
+  count = var.launch_configuration.create ? 0 : var.launch_configuration.use_launch_configuration ? 1 : 0
+  name  = var.launch_configuration.name
+}
+
+locals {
+  launch_configuration = var.launch_configuration.create ? one(aws_launch_configuration.lc) : var.launch_configuration.use_launch_configuration ? one(data.aws_launch_configuration.lc) : null
 }

@@ -472,3 +472,46 @@ variable "auto_scaling_policy" {
     }))
   })
 }
+
+variable "autoscaling_attachment" {
+  description = "Configuration for the autoscaling attachment"
+  type = object({
+    elb                 = string
+    lb_target_group_arn = string
+  })
+  default = null
+}
+
+variable "autoscaling_traffic_source_attachment" {
+  description = "Configuration for the autoscaling traffic source attachment"
+  type = object({
+    identifier = string
+    type       = string
+  })
+  default = null
+}
+variable "autoscaling_schedule" {
+  description = "List of autoscaling schedules"
+  type = list(object({
+    scheduled_action_name = string
+    start_time            = optional(string)
+    end_time              = optional(string)
+    recurrence            = optional(string)
+    min_size              = optional(number)
+    max_size              = optional(number)
+    desired_capacity      = optional(number)
+  }))
+  default = []
+}
+
+variable "lifecycle_hooks" {
+  type = list(object({
+    name                    = string
+    default_result          = string
+    heartbeat_timeout       = number
+    lifecycle_transition    = string
+    notification_metadata   = string
+    notification_target_arn = string
+    role_arn                = string
+  }))
+}

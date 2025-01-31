@@ -27,21 +27,18 @@ variables {
     availability_zones = ["us-east-1a"]
     mixed_instances_policy = {
       launch_template = {
-        key_name            = "example-key"
-        use_launch_template = true
-        create              = true
-        network_interfaces = [{
-          associate_public_ip_address = true
-          subnet_id                   = "subnet-12345678"
-        }]
+        launch_template_specification = {
+          launch_template_id = "lt-12345678"
+          version            = "$Latest"
+        }
       }
       instances_distribution = {
         on_demand_base_capacity                  = 1
         on_demand_percentage_above_base_capacity = 50
         spot_allocation_strategy                 = "lowest-price"
       }
-    }
-  }
+  } }
+
 }
 
 run "test_mixed_instances_policy" {

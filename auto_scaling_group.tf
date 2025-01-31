@@ -5,16 +5,17 @@ resource "aws_autoscaling_group" "asg" {
 
   launch_configuration = var.auto_scaling.configuration_type == "launch_configuration" ? local.launch_configuration.name : null
 
+
   dynamic "launch_template" {
-    for_each = var.auto_scaling.configuration_type == "launch_template" ? [1] : []
+    for_each = local.launch_template != null && var.auto_scaling.configuration_type == "launch_template" ? [1] : []
     content {
-      id      = local.launch_template != null ? local.launch_template.id : null
-      version = local.launch_template != null ? local.launch_template.latest_version : null
+      id      = local.launch_template.id
+      version = local.launch_template.latest_version
     }
   }
 
   dynamic "mixed_instances_policy" {
-    for_each = var.auto_scaling.configuration_type == "mixed_instances_policy" && var.auto_scaling.mixed_instances_policy != null ? [] : [1]
+    for_each = var.auto_scaling.configuration_type == "mixed_instances_policy" && var.auto_scaling.mixed_instances_policy != null ? [1] : []
     content {
       dynamic "instances_distribution" {
         for_each = try(var.auto_scaling.mixed_instances_policy.instances_distribution, null) == null ? [] : [1]
@@ -29,15 +30,11 @@ resource "aws_autoscaling_group" "asg" {
       }
 
       dynamic "launch_template" {
-        for_each = try(var.auto_scaling.mixed_instances_policy.launch_template, null) == null ? [] : [var.auto_scaling.mixed_instances_policy.launch_template]
+        for_each = try(var.auto_scaling.mixed_instances_policy.launch_template, null) == null ? [] : [1]
         content {
           launch_template_specification {
-            launch_template_id = launch_template.id
-            version            = launch_template.latest_version
-          }
-
-          override {
-            instance_type = local.launch_template.instance_type
+            launch_template_id = var.auto_scaling.mixed_instances_policy.launch_template.id
+            version            = var.auto_scaling.mixed_instances_policy.launch_template.latest_version
           }
         }
       }

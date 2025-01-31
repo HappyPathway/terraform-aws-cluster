@@ -411,9 +411,9 @@ variable "launch_template" {
       }), null)
     }), null)
 
-    kernel_id = optional(string)
-    key_name  = optional(string)
-
+    kernel_id      = optional(string)
+    key_name       = optional(string)
+    latest_version = optional(bool)
     license_specification = optional(object({
       license_configuration_arn = string
     }), null)

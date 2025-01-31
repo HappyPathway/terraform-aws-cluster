@@ -511,11 +511,13 @@ variable "root_volume" {
 variable "security_group_ids" {
   description = "List of security group IDs that will be applied to the autoscaling group"
   type        = list(string)
+  default     = []
 }
 
 variable "tags" {
   description = "Arbitrary tags that will be applied to all resources created in this module"
   type        = map(string)
+  default     = {}
 }
 
 variable "vpc_cluster" {

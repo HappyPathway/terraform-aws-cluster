@@ -1,5 +1,5 @@
 resource "aws_launch_template" "lt" {
-  count         = var.launch_template == null ? 0 : 1
+  count         = var.launch_template.create ? 0 : 1
   name          = var.project_name
   image_id      = data.aws_ami.ami.id
   instance_type = var.launch_template.instance_type
@@ -181,11 +181,13 @@ resource "aws_launch_template" "lt" {
     }
   }
 
-  tags = var.tags
-
+  tags                   = var.tags
   update_default_version = true
-
-  user_data = local.cloud_init
-
+  user_data              = local.cloud_init
   vpc_security_group_ids = var.vpc_cluster ? var.security_group_ids : null
+}
+
+
+locals {
+  launch_template = var.launch_template.create ? one(aws_launch_template.lt) : var.launch_template.use_launch_template ? one(data.aws_launch_template.lt) : null
 }

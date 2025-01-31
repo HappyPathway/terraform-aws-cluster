@@ -291,6 +291,7 @@ variable "cloud_init_config" {
 }
 
 variable "ebs_block_devices" {
+  description = "List of EBS block devices to attach to the instance"
   type = list(object({
     device_name           = string
     snapshot_id           = optional(string, null)
@@ -306,6 +307,7 @@ variable "ebs_block_devices" {
 }
 
 variable "ephemeral_block_devices" {
+  description = "List of ephemeral block devices to attach to the instance"
   type = list(object({
     device_name  = string
     virtual_name = string
@@ -352,6 +354,8 @@ variable "launch_configuration" {
 variable "launch_template" {
   description = "Configuration for the launch template"
   type = object({
+    create              = optional(bool, false)
+    use_launch_template = optional(bool, false)
     block_device_mappings = optional(list(object({
       device_name = string
       ebs = object({
@@ -442,10 +446,14 @@ variable "launch_template" {
       tags          = map(string)
     })), [])
   })
-  default = null
+  default = {
+    create        = false
+    instance_type = "t2.micro"
+  }
 }
 
 variable "lifecycle_hooks" {
+  description = "List of lifecycle hooks for the autoscaling group"
   type = list(object({
     name                    = string
     default_result          = string
@@ -481,6 +489,7 @@ variable "propagate_tags_at_launch" {
 }
 
 variable "root_volume" {
+  description = "Configuration for the root volume of the instance"
   type = object({
     iops                  = optional(number, 0)
     throughput            = optional(number, 0)
@@ -503,6 +512,7 @@ variable "tags" {
 }
 
 variable "vpc_cluster" {
-  type    = bool
-  default = true
+  description = "Boolean flag to indicate if the cluster is within a VPC"
+  type        = bool
+  default     = true
 }

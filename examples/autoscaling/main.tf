@@ -41,6 +41,7 @@ module "autoscaling" {
   project_name       = var.project_name
   instance_type      = "t2.micro"
   launch_template = {
+    create   = true
     key_name = "example-key"
     network_interfaces = {
       associate_public_ip_address = true

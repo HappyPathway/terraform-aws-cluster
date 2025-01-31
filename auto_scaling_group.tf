@@ -1,7 +1,48 @@
+# one of `launch_configuration,launch_template,mixed_instances_policy` must be specified
 resource "aws_autoscaling_group" "asg" {
-  count                = var.auto_scaling.create ? 0 : 1
-  name                 = var.project_name
-  launch_configuration = var.launch_configuration.use_launch_configuration ? local.launch_configuration.name : null
+  count = var.auto_scaling.create ? 0 : 1
+  name  = var.project_name
+
+  launch_configuration = var.auto_scaling.configuration_type == "launch_configuration" ? local.launch_configuration.name : null
+
+  dynamic "launch_template" {
+    for_each = var.auto_scaling.configuration_type == "launch_template" ? [1] : []
+    content {
+      id      = local.launch_template != null ? local.launch_template.id : null
+      version = local.launch_template != null ? local.launch_template.latest_version : null
+    }
+  }
+
+  dynamic "mixed_instances_policy" {
+    for_each = var.auto_scaling.configuration_type == "mixed_instances_policy" && var.auto_scaling.mixed_instances_policy != null ? [] : [1]
+    content {
+      dynamic "instances_distribution" {
+        for_each = try(var.auto_scaling.mixed_instances_policy.instances_distribution, null) == null ? [] : [1]
+        content {
+          on_demand_allocation_strategy            = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_allocation_strategy
+          on_demand_base_capacity                  = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_base_capacity
+          on_demand_percentage_above_base_capacity = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_percentage_above_base_capacity
+          spot_allocation_strategy                 = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_allocation_strategy
+          spot_instance_pools                      = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_instance_pools
+          spot_max_price                           = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_max_price
+        }
+      }
+
+      dynamic "launch_template" {
+        for_each = try(var.auto_scaling.mixed_instances_policy.launch_template, null) == null ? [] : [var.auto_scaling.mixed_instances_policy.launch_template]
+        content {
+          launch_template_specification {
+            launch_template_id = launch_template.id
+            version            = launch_template.latest_version
+          }
+
+          override {
+            instance_type = local.launch_template.instance_type
+          }
+        }
+      }
+    }
+  }
 
   min_size            = var.auto_scaling.min_size
   max_size            = var.auto_scaling.max_size
@@ -32,13 +73,6 @@ resource "aws_autoscaling_group" "asg" {
 
   desired_capacity_type = var.auto_scaling.desired_capacity_type
 
-  dynamic "launch_template" {
-    for_each = var.launch_template == null ? [] : [1]
-    content {
-      id      = aws_launch_template.lt.id
-      version = aws_launch_template.lt.latest_version
-    }
-  }
 
   dynamic "traffic_source" {
     for_each = var.auto_scaling.traffic_source == null ? [] : [1]
@@ -115,34 +149,6 @@ resource "aws_autoscaling_group" "asg" {
       max_group_prepared_capacity = var.auto_scaling.warm_pool.max_group_prepared_capacity
       min_size                    = var.auto_scaling.warm_pool.min_size
       pool_state                  = var.auto_scaling.warm_pool.pool_state
-    }
-  }
-
-  dynamic "mixed_instances_policy" {
-    for_each = var.auto_scaling.mixed_instances_policy == null ? [] : [1]
-    content {
-      instances_distribution {
-        on_demand_allocation_strategy            = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_allocation_strategy
-        on_demand_base_capacity                  = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_base_capacity
-        on_demand_percentage_above_base_capacity = var.auto_scaling.mixed_instances_policy.instances_distribution.on_demand_percentage_above_base_capacity
-        spot_allocation_strategy                 = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_allocation_strategy
-        spot_instance_pools                      = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_instance_pools
-        spot_max_price                           = var.auto_scaling.mixed_instances_policy.instances_distribution.spot_max_price
-      }
-
-      dynamic "launch_template" {
-        for_each = var.launch_template == null ? [] : [1]
-        content {
-          launch_template_specification {
-            launch_template_id = aws_launch_template.lt.id
-            version            = aws_launch_template.lt.latest_version
-          }
-
-          override {
-            instance_type = aws_launch_template.lt.instance_type
-          }
-        }
-      }
     }
   }
 }

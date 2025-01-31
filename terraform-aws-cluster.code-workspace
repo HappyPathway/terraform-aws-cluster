@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "terraform-aws-cluster"
+		},
+		{
+			"path": "../terraform-provider-aws/website/docs/d",
+			"name": "aws/data-sources"
+		},
+		{
+			"path": "../terraform-provider-aws/website/docs/r",
+			"name": "aws/resources"
+		},
+		{
+			"path": "../terraform-provider-aws/website/docs/functions",
+			"name": "aws/functions"
+		},
+		{
+			"path": "../terraform/website/docs",
+			"name": "terraform/terraform-docs"
+		}
+	]
+}

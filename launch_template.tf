@@ -2,7 +2,7 @@ resource "aws_launch_template" "lt" {
   count         = var.launch_template.create ? 0 : 1
   name          = var.project_name
   image_id      = data.aws_ami.ami.id
-  instance_type = var.launch_template.instance_type
+  instance_type = var.instance_type
 
   dynamic "block_device_mappings" {
     for_each = var.launch_template.block_device_mappings
@@ -79,9 +79,8 @@ resource "aws_launch_template" "lt" {
   }
 
   instance_initiated_shutdown_behavior = "terminate"
-
   dynamic "instance_market_options" {
-    for_each = var.launch_template.instance_market_options == null ? [] : [var.launch_template.instance_market_options]
+    for_each = var.launch_template.instance_market_options == null ? [] : [for option in var.launch_template.instance_market_options : option]
     content {
       market_type = instance_market_options.value.market_type
       spot_options {
@@ -146,7 +145,7 @@ resource "aws_launch_template" "lt" {
   }
 
   dynamic "network_interfaces" {
-    for_each = var.launch_template.network_interfaces == null ? [] : [var.launch_template.network_interfaces]
+    for_each = var.launch_template.network_interfaces == null ? [] : var.launch_template.network_interfaces
     content {
       associate_public_ip_address = network_interfaces.value.associate_public_ip_address
       subnet_id                   = network_interfaces.value.subnet_id
@@ -188,6 +187,12 @@ resource "aws_launch_template" "lt" {
 }
 
 
+data "aws_launch_template" "lt" {
+  count = var.launch_template.create == false && var.launch_template.use_launch_template ? 1 : 0
+
+  name = var.launch_template.name
+}
+
 locals {
-  launch_template = var.launch_template.create ? one(aws_launch_template.lt) : var.launch_template.use_launch_template ? one(data.aws_launch_template.lt) : null
+  launch_template = var.launch_template.create ? one(aws_launch_template.lt) : one(data.aws_launch_template.lt)
 }

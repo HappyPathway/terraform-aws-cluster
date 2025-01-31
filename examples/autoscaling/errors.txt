@@ -1,5 +1,0 @@
-│ The given value is not suitable for module.autoscaling.var.launch_template declared at ../../variables.tf:352,1-27: attributes
-│ "block_device_mappings", "capacity_reservation_specification", "cpu_options", "credit_specification", "elastic_gpu_specifications",
-│ "elastic_inference_accelerator", "enclave_options", "hibernation_options", "iam_instance_profile", "instance_market_options",
-│ "instance_requirements", "instance_type", "license_specification", "maintenance_options", "metadata_options", "placement",
-│ "private_dns_name_options", and "tag_specifications" are required.

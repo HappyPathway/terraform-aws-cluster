@@ -352,40 +352,41 @@ variable "launch_configuration" {
 variable "launch_template" {
   description = "Configuration for the launch template"
   type = object({
-    block_device_mappings = list(object({
+    block_device_mappings = optional(list(object({
       device_name = string
       ebs = object({
         volume_size = number
         volume_type = string
       })
-    }))
-    capacity_reservation_specification = list(object({
-      capacity_reservation_preference = string
-    }))
-    cpu_options = list(object({
+    })), [])
+    capacity_reservation_specification = optional(
+      list(object({
+        capacity_reservation_preference = string
+    })), [])
+    cpu_options = optional(list(object({
       core_count       = number
       threads_per_core = number
-    }))
-    credit_specification = list(object({
+    })), [])
+    credit_specification = optional(list(object({
       cpu_credits = string
-    }))
-    elastic_gpu_specifications = list(object({
+    })), [])
+    elastic_gpu_specifications = optional(list(object({
       type = string
-    }))
-    elastic_inference_accelerator = list(object({
+    })), [])
+    elastic_inference_accelerator = optional(list(object({
       type = string
-    }))
-    enclave_options = list(object({
+    })), [])
+    enclave_options = optional(list(object({
       enabled = bool
-    }))
-    hibernation_options = list(object({
+    })), [])
+    hibernation_options = optional(list(object({
       configured = bool
-    }))
-    iam_instance_profile = list(object({
+    })), [])
+    iam_instance_profile = optional(list(object({
       name = string
-    }))
+    })), [])
     instance_type = string
-    instance_market_options = list(object({
+    instance_market_options = optional(list(object({
       market_type = string
       spot_options = object({
         block_duration_minutes         = number
@@ -394,8 +395,8 @@ variable "launch_template" {
         spot_instance_type             = string
         valid_until                    = string
       })
-    }))
-    instance_requirements = list(object({
+    })), [])
+    instance_requirements = optional(list(object({
       vcpu_count = object({
         min = number
         max = number
@@ -404,42 +405,42 @@ variable "launch_template" {
         min = number
         max = number
       })
-    }))
+    })), [])
 
     kernel_id = optional(string)
     key_name  = optional(string)
 
-    license_specification = list(object({
+    license_specification = optional(list(object({
       license_configuration_arn = string
-    }))
-    maintenance_options = list(object({
+    })), [])
+    maintenance_options = optional(list(object({
       auto_recovery = string
-    }))
-    metadata_options = list(object({
+    })), [])
+    metadata_options = optional(list(object({
       http_endpoint               = string
       http_put_response_hop_limit = number
       http_tokens                 = string
       instance_metadata_tags      = string
-    }))
-    network_interfaces = list(object({
+    })), [])
+    network_interfaces = optional(list(object({
       associate_public_ip_address = bool
       subnet_id                   = string
-    }))
-    placement = list(object({
+    })), [])
+    placement = optional(list(object({
       availability_zone = string
-    }))
-    private_dns_name_options = list(object({
+    })), [])
+    private_dns_name_options = optional(list(object({
       enable_resource_name_dns_aaaa_record = bool
       enable_resource_name_dns_a_record    = bool
       hostname_type                        = string
-    }))
+    })), [])
 
     ram_disk_id = optional(string)
 
-    tag_specifications = list(object({
+    tag_specifications = optional(list(object({
       resource_type = string
       tags          = map(string)
-    }))
+    })), [])
   })
   default = null
 }

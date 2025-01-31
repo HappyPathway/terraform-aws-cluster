@@ -37,7 +37,7 @@ variable "vpc_id" {
   type        = string
 }
 
-variable subnet_id {
+variable "subnet_id" {
   description = "The ID of the subnet where the instances will be launched"
   type        = string
 }

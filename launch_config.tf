@@ -63,7 +63,7 @@ resource "aws_launch_configuration" "lc" {
   }
 }
 
-data aws_launch_configuration "lc" {
+data "aws_launch_configuration" "lc" {
   count = var.launch_configuration.create ? 0 : var.launch_configuration.use_launch_configuration ? 1 : 0
   name  = var.launch_configuration.name
 }

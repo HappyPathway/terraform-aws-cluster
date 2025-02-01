@@ -45,6 +45,6 @@ run "launch_template" {
 
   assert {
     condition     = aws_autoscaling_group.asg != null && one(aws_autoscaling_group.asg).id != ""
-    error_message = "Mixed instances policy ASG was not created"
+    error_message = "ASG was not created"
   }
 }

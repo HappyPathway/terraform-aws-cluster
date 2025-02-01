@@ -78,6 +78,7 @@ No modules.
 | <a name="output_autoscaling_group"></a> [autoscaling\_group](#output\_autoscaling\_group) | n/a |
 | <a name="output_cloud_init"></a> [cloud\_init](#output\_cloud\_init) | n/a |
 | <a name="output_launch_configuration"></a> [launch\_configuration](#output\_launch\_configuration) | n/a |
+ <!-- END_TF_DOCS -->
 
 ## Examples
 

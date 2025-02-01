@@ -327,6 +327,8 @@ variable "launch_template" {
     credit_specification = optional(object({
       cpu_credits = string
     }), null)
+    disable_api_stop        = optional(bool, false)
+    disable_api_termination = optional(bool, false)
     elastic_gpu_specifications = optional(object({
       type = string
     }), null)

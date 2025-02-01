@@ -24,11 +24,15 @@ variables {
     min_size           = 1
     max_size           = 2
     desired_capacity   = 1
-    subnets            = ["subnet-12345678"]
+    subnets = [
+      "subnet-0038fa2a217039c178",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
     mixed_instances_policy = {
       launch_template = {
         launch_template_specification = {
-          launch_template_id = "lt-12345678"
+          launch_template_id = "lt-0f4d189bf80f3c6448"
           version            = "$Latest"
         }
       }

@@ -1,3 +1,8 @@
+
+provider "aws" {
+  region = "us-east-1"
+}
+
 variables {
   project_name  = "test-project"
   instance_type = "t2.micro"

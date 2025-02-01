@@ -1,5 +1,5 @@
 resource "aws_launch_template" "lt" {
-  count         = var.launch_template.create ? 0 : 1
+  count         = var.launch_template.create ? 1 : 0
   name          = var.project_name
   image_id      = data.aws_ami.ami.id
   instance_type = var.instance_type

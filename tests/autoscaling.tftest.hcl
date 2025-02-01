@@ -12,11 +12,7 @@ variables {
     filters = [
       {
         name   = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-20.04*"]
-      },
-      {
-        name   = "virtualization-type"
-        values = ["hvm"]
+        values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-20231128"]
       }
     ]
   }

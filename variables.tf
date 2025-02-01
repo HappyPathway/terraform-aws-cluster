@@ -329,6 +329,7 @@ variable "launch_template" {
     }), null)
     disable_api_stop        = optional(bool, false)
     disable_api_termination = optional(bool, false)
+    ebs_optimized           = optional(bool, false)
     elastic_gpu_specifications = optional(object({
       type = string
     }), null)

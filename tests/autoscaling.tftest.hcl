@@ -25,7 +25,6 @@ variables {
     max_size           = 2
     desired_capacity   = 1
     subnets            = ["subnet-12345678"]
-    availability_zones = ["us-east-1a"]
     mixed_instances_policy = {
       launch_template = {
         launch_template_specification = {

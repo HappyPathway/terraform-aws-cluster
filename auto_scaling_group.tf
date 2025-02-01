@@ -143,6 +143,8 @@ resource "aws_autoscaling_group" "asg" {
       pool_state                  = var.auto_scaling.warm_pool.pool_state
     }
   }
+
+  depends_on = [aws_launch_template.lt]
 }
 
 data "aws_autoscaling_group" "asg" {

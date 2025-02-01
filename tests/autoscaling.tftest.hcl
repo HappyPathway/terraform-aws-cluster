@@ -45,7 +45,7 @@ run "test_mixed_instances_policy" {
   command = plan
 
   assert {
-    condition     = aws_autoscaling_group.asg_mixed_instances_policy.id != ""
+    condition     = one(aws_autoscaling_group.asg_mixed_instances_policy).id != ""
     error_message = "Mixed instances policy ASG was not created"
   }
 }

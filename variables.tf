@@ -308,7 +308,7 @@ variable "launch_template" {
   description = "Configuration for the launch template"
   type = object({
     create              = optional(bool, false)
-    use_launch_template = optional(bool, false)
+    use_launch_template = optional(bool, true)
     name                = optional(string, null)
     block_device_mappings = optional(list(object({
       device_name = string

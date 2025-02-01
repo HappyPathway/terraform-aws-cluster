@@ -56,9 +56,8 @@ resource "aws_autoscaling_group" "asg" {
     }
   }
 
-
   dynamic "launch_template" {
-    for_each = local.launch_template == null ? [] : [1]
+    for_each = var.launch_template.use_launch_template ? [1] : []
     content {
       id      = local.launch_template.id
       version = local.launch_template.latest_version

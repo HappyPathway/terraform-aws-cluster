@@ -24,7 +24,7 @@ variables {
     create              = true
     network_interfaces = [{
       associate_public_ip_address = true
-      subnet_id                   = "subnet-0038fa2a217039c178"
+      subnet_id                   = "subnet-0038fa2a217039c17"
     }]
   }
   auto_scaling = {
@@ -33,7 +33,7 @@ variables {
     max_size         = 2
     desired_capacity = 1
     subnets = [
-      "subnet-0038fa2a217039c178",
+      "subnet-0038fa2a217039c17",
       "subnet-061980a4fef9ebf6a",
       "subnet-015d2308cbd1329d5"
     ]

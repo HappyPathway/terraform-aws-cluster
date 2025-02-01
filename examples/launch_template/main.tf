@@ -3,7 +3,7 @@ resource "random_pet" "project_name" {}
 resource "aws_security_group" "security_group" {
   for_each    = { for security_group in var.security_groups : security_group.name => security_group }
   name        = "${var.project_name}-${random_pet.project_name.id}"
-  vpc_id      = var.vpc_id
+  vpc_id      = "vpc-056336e21941b332a"
   description = "Stubbed security group for ${var.project_name}"
 }
 
@@ -31,11 +31,11 @@ module "autoscaling" {
   }
   ami = {
     most_recent = true
-    owners      = ["self"]
+    owners      = ["099720109477"]
     filters = [
       {
-        name   = "tag:Project"
-        values = ["${var.project_name}"]
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
       }
     ]
   }
@@ -48,7 +48,7 @@ module "autoscaling" {
     create              = true
     network_interfaces = [{
       associate_public_ip_address = true
-      subnet_id                   = var.subnet_id
+      subnet_id                   = "subnet-0038fa2a217039c178"
     }]
   }
 }

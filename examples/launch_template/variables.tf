@@ -31,13 +31,3 @@ variable "security_groups" {
     }
   ]
 }
-
-variable "vpc_id" {
-  description = "The ID of the VPC where the subnets will be created"
-  type        = string
-}
-
-variable "subnet_id" {
-  description = "The ID of the subnet where the instances will be launched"
-  type        = string
-}

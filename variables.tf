@@ -291,32 +291,6 @@ variable "cloud_init_config" {
   default = []
 }
 
-variable "ebs_block_devices" {
-  description = "List of EBS block devices to attach to the instance"
-  type = list(object({
-    device_name           = string
-    snapshot_id           = optional(string, null)
-    iops                  = optional(number, 0)
-    throughput            = optional(number, 0)
-    delete_on_termination = optional(bool, true)
-    encrypted             = optional(bool, false)
-    no_device             = optional(bool, false)
-    volume_size           = optional(number, 8)
-    volume_type           = optional(string, "gp2")
-  }))
-  default = []
-}
-
-variable "ephemeral_block_devices" {
-  description = "List of ephemeral block devices to attach to the instance"
-  type = list(object({
-    device_name  = string
-    virtual_name = string
-    no_device    = optional(bool, false)
-  }))
-  default = []
-}
-
 variable "file_list" {
   description = "List of files to be included in the configuration"
   type = list(object({
@@ -329,27 +303,6 @@ variable "file_list" {
 variable "instance_type" {
   description = "Instance type that will be used for the launch configuration"
   type        = string
-}
-
-variable "launch_configuration" {
-  description = "Configuration for the launch configuration"
-  type = object({
-    create                      = optional(bool, false)
-    use_launch_configuration    = optional(bool, false)
-    name                        = optional(string, null)
-    iam_instance_profile        = optional(string, null)
-    associate_public_ip_address = optional(bool, false)
-    placement_tenancy           = optional(string, "default")
-    key_name                    = optional(string, null)
-    enable_monitoring           = optional(bool, false)
-    ebs_optimized               = optional(bool, false)
-    metadata_options = optional(object({
-      http_tokens                 = optional(string, "optional")
-      http_put_response_hop_limit = optional(number, 1)
-      http_endpoint               = optional(string, "enabled")
-    }), {})
-  })
-  default = {}
 }
 
 variable "launch_template" {
@@ -493,19 +446,6 @@ variable "propagate_tags_at_launch" {
   description = "Specifies whether tags are propagated to the instances in the Auto Scaling group"
   type        = bool
   default     = true
-}
-
-variable "root_volume" {
-  description = "Configuration for the root volume of the instance"
-  type = object({
-    iops                  = optional(number, 0)
-    throughput            = optional(number, 0)
-    delete_on_termination = optional(bool, true)
-    encrypted             = optional(bool, false)
-    volume_size           = optional(number, 8)
-    volume_type           = optional(string, "gp2")
-  })
-  default = {}
 }
 
 variable "security_group_ids" {

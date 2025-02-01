@@ -22,10 +22,6 @@ variables {
     key_name            = "terraform-aws-cluster"
     use_launch_template = true
     create              = true
-    network_interfaces = [{
-      associate_public_ip_address = true
-      subnet_id                   = "subnet-0038fa2a217039c17"
-    }]
   }
   auto_scaling = {
     create           = true

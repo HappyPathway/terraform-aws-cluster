@@ -42,7 +42,7 @@ variables {
 }
 
 run "test_mixed_instances_policy" {
-  command = plan
+  command = apply
 
   assert {
     condition     = one(aws_autoscaling_group.asg_mixed_instances_policy).id != ""

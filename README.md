@@ -1,5 +1,3 @@
-
-
 [![Terraform Validation](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform.yaml/badge.svg)](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform.yaml)
 
 
@@ -80,4 +78,560 @@ No modules.
 | <a name="output_autoscaling_group"></a> [autoscaling\_group](#output\_autoscaling\_group) | n/a |
 | <a name="output_cloud_init"></a> [cloud\_init](#output\_cloud\_init) | n/a |
 | <a name="output_launch_configuration"></a> [launch\_configuration](#output\_launch\_configuration) | n/a |
-<!-- END_TF_DOCS -->
+
+## Examples
+
+### Basic Auto Scaling Group
+
+This example demonstrates a basic auto scaling group setup with minimal configuration.
+
+```hcl
+module "basic_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+}
+```
+
+### Auto Scaling with Launch Template
+
+This example shows how to configure an auto scaling group using a launch template.
+
+```hcl
+module "autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+}
+```
+
+### Auto Scaling with Mixed Instances Policy
+
+This example provides an auto scaling group with a mixed instances policy.
+
+```hcl
+module "mixed_instances_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+    mixed_instances_policy = {
+      instances_distribution = {
+        on_demand_allocation_strategy            = "prioritized"
+        on_demand_base_capacity                  = 1
+        on_demand_percentage_above_base_capacity = 50
+        spot_allocation_strategy                 = "lowest-price"
+        spot_instance_pools                      = 2
+      }
+      launch_template = {
+        launch_template_specification = {
+          launch_template_id = aws_launch_template.example.id
+          version            = "$Latest"
+        }
+        override = [
+          {
+            instance_type = "t3.micro"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### Auto Scaling with Lifecycle Hooks
+
+This example illustrates the use of lifecycle hooks in an auto scaling group.
+
+```hcl
+module "lifecycle_hooks_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+    initial_lifecycle_hooks = [
+      {
+        name                    = "ExampleHook"
+        lifecycle_transition    = "autoscaling:EC2_INSTANCE_TERMINATING"
+        notification_target_arn = "arn:aws:sns:us-east-1:123456789012:ExampleTopic"
+        role_arn                = "arn:aws:iam::123456789012:role/ExampleRole"
+        notification_metadata   = jsonencode({ "key" = "value" })
+        heartbeat_timeout       = 300
+        default_result          = "CONTINUE"
+      }
+    ]
+  }
+}
+```
+
+### Auto Scaling with Scheduled Actions
+
+This example demonstrates how to set up scheduled actions for an auto scaling group.
+
+```hcl
+module "scheduled_actions_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+  }
+  autoscaling_schedule = [
+    {
+      scheduled_action_name = "ScaleUp"
+      start_time            = "2023-01-01T00:00:00Z"
+      min_size              = 2
+      max_size              = 4
+      desired_capacity      = 3
+    },
+    {
+      scheduled_action_name = "ScaleDown"
+      start_time            = "2023-01-01T12:00:00Z"
+      min_size              = 1
+      max_size              = 2
+      desired_capacity      = 1
+    }
+  ]
+}
+```
+
+### Auto Scaling with Target Tracking Policy
+
+This example shows how to configure a target tracking scaling policy for an auto scaling group.
+
+```hcl
+module "target_tracking_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+  }
+  auto_scaling_policy = {
+    name                      = "TargetTrackingPolicy"
+    policy_type               = "TargetTrackingScaling"
+    estimated_instance_warmup = 300
+    target_tracking_configuration = {
+      predefined_metric_specification = {
+        predefined_metric_type = "ASGAverageCPUUtilization"
+      }
+      target_value     = 50.0
+      disable_scale_in = false
+    }
+  }
+}
+```
+
+### Auto Scaling with Step Scaling Policy
+
+This example provides a step scaling policy for an auto scaling group.
+
+```hcl
+module "step_scaling_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+  }
+  auto_scaling_policy = {
+    name            = "StepScalingPolicy"
+    policy_type     = "StepScaling"
+    adjustment_type = "ChangeInCapacity"
+    cooldown        = 300
+    step_adjustment = [
+      {
+        scaling_adjustment          = 1
+        metric_interval_lower_bound = 0
+        metric_interval_upper_bound = 10
+      },
+      {
+        scaling_adjustment          = 2
+        metric_interval_lower_bound = 10
+        metric_interval_upper_bound = 20
+      }
+    ]
+  }
+}
+```
+
+### Auto Scaling with Predictive Scaling Policy
+
+This example illustrates the use of predictive scaling policies in an auto scaling group.
+
+```hcl
+module "predictive_scaling_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+  }
+  auto_scaling_policy = {
+    name                      = "PredictiveScalingPolicy"
+    policy_type               = "PredictiveScaling"
+    estimated_instance_warmup = 300
+    predictive_scaling_configuration = {
+      metric_specification = {
+        target_value = 50.0
+        predefined_load_metric_specification = {
+          predefined_metric_type = "ASGAverageCPUUtilization"
+        }
+        predefined_scaling_metric_specification = {
+          predefined_metric_type = "ASGAverageCPUUtilization"
+        }
+      }
+      mode                   = "ForecastAndScale"
+      scheduling_buffer_time = 300
+    }
+  }
+}
+```
+
+### Auto Scaling with Warm Pools
+
+This example demonstrates the configuration of warm pools in an auto scaling group.
+
+```hcl
+module "warm_pools_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+    warm_pool = {
+      instance_reuse_policy = {
+        reuse_on_scale_in = true
+      }
+      max_group_prepared_capacity = 2
+      min_size                    = 1
+      pool_state                  = "Stopped"
+    }
+  }
+}
+```
+
+### Auto Scaling with Traffic Sources
+
+This example shows how to attach traffic sources to an auto scaling group.
+
+```hcl
+module "traffic_sources_autoscaling" {
+  source = "../../"
+
+  tags = {
+    Environment = var.project_name
+  }
+  ami = {
+    most_recent = true
+    owners      = ["099720109477"]
+    filters = [
+      {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
+      }
+    ]
+  }
+  security_group_ids = [for sec_group in var.security_groups : lookup(aws_security_group.security_group, sec_group.name).id]
+  project_name       = var.project_name
+  instance_type      = "t2.micro"
+  launch_template = {
+    key_name            = "example-key"
+    use_launch_template = true
+    create              = true
+    network_interfaces = [{
+      associate_public_ip_address = true
+      subnet_id                   = "subnet-0038fa2a217039c178"
+    }]
+  }
+  auto_scaling = {
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
+    subnets = [
+      "subnet-0038fa2a217039c17",
+      "subnet-061980a4fef9ebf6a",
+      "subnet-015d2308cbd1329d5"
+    ]
+  }
+  autoscaling_traffic_source_attachment = {
+    identifier = "arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/ExampleTargetGroup/1234567890123456"
+    type       = "elb"
+  }
+}
+```

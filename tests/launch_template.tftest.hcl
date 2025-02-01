@@ -4,7 +4,7 @@ provider "aws" {
 }
 
 variables {
-  project_name  = "test-project"
+  project_name  = "test-project-${random_pet.project_name.id}"
   instance_type = "t2.micro"
   ami = {
     most_recent = true

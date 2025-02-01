@@ -366,7 +366,7 @@ resource "aws_autoscaling_group" "asg_launch_configuration" {
 }
 
 data "aws_autoscaling_group" "asg" {
-  count = var.auto_scaling.create == false ? 0 : 1
+  count = var.auto_scaling.create ? 0 : 1
   name  = var.project_name
 }
 

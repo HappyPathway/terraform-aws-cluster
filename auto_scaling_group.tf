@@ -1,5 +1,5 @@
 resource "aws_autoscaling_group" "asg" {
-  count = var.auto_scaling.create && var.auto_scaling.configuration_type == "launch_template" ? 1 : 0
+  count = var.auto_scaling.create ? 1 : 0
   name  = var.project_name
 
   min_size            = var.auto_scaling.min_size

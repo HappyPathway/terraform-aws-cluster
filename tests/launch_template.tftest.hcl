@@ -37,24 +37,10 @@ variables {
       "subnet-061980a4fef9ebf6a",
       "subnet-015d2308cbd1329d5"
     ]
-    #   mixed_instances_policy = {
-    #     launch_template = {
-    #       launch_template_specification = {
-    #         launch_template_id = "lt-0f4d189bf80f3c6448"
-    #         version            = "$Latest"
-    #       }
-    #     }
-    #     instances_distribution = {
-    #       on_demand_base_capacity                  = 1
-    #       on_demand_percentage_above_base_capacity = 50
-    #       spot_allocation_strategy                 = "lowest-price"
-    #     }
-    # }
   }
-
 }
 
-run "test_mixed_instances_policy" {
+run "launch_template" {
   command = apply
 
   assert {

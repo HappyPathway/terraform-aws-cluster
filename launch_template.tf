@@ -38,10 +38,10 @@ resource "aws_launch_template" "lt" {
     }
   }
 
-  disable_api_stop        = true
-  disable_api_termination = true
+  disable_api_stop        = var.launch_template.disable_api_stop
+  disable_api_termination = var.launch_template.disable_api_termination
 
-  ebs_optimized = true
+  ebs_optimized = var.launch_template.ebs_optimized
 
   dynamic "elastic_gpu_specifications" {
     for_each = var.launch_template.elastic_gpu_specifications == null ? [] : [var.launch_template.elastic_gpu_specifications]

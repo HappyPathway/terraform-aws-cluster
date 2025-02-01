@@ -22,7 +22,6 @@ variable "auto_scaling" {
     subnets                          = optional(list(string), null)
     availability_zones               = optional(list(string), null)
     capacity_rebalance               = optional(bool, false)
-    configuration_type               = optional(string, "launch_template")
     default_cooldown                 = optional(number, 300)
     default_instance_warmup          = optional(number, 300)
     health_check_grace_period        = optional(number, 300)

@@ -28,11 +28,10 @@ variables {
     }]
   }
   auto_scaling = {
-    create             = true
-    configuration_type = "mixed_instances_policy"
-    min_size           = 1
-    max_size           = 2
-    desired_capacity   = 1
+    create           = true
+    min_size         = 1
+    max_size         = 2
+    desired_capacity = 1
     subnets = [
       "subnet-0038fa2a217039c178",
       "subnet-061980a4fef9ebf6a",

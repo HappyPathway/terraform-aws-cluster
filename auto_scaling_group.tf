@@ -136,8 +136,8 @@ resource "aws_autoscaling_group" "asg_mixed_instances_policy" {
       for_each = var.auto_scaling.mixed_instances_policy.launch_template == null ? [] : [1]
       content {
         launch_template_specification {
-          launch_template_id = var.launch_template.create ? local.launch_template.id : var.auto_scaling.mixed_instances_policy.launch_template.launch_template_specification.launch_template_id
-          version            = var.launch_template.create ? local.launch_template.version : var.auto_scaling.mixed_instances_policy.launch_template.launch_template_specification.version
+          launch_template_id = var.launch_template.create && local.launch_template ? local.launch_template.id : var.auto_scaling.mixed_instances_policy.launch_template.launch_template_specification.launch_template_id
+          version            = var.launch_template.create && local.launch_template ? local.launch_template.version : var.auto_scaling.mixed_instances_policy.launch_template.launch_template_specification.version
         }
       }
     }

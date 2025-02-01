@@ -1,0 +1,50 @@
+name: "Terraform Test"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+env:
+  GITHUB_OWNER: ${{ vars.GH_ORG }}
+  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+  TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+  AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  
+jobs:
+  setup-terraform:
+    outputs:
+      commit_sha: ${{ steps.checkout.outputs.commit }}
+        
+    runs-on: ubuntu-latest
+    steps:     
+      - uses: actions/checkout@v4
+        id: checkout
+        with:
+          persist-credentials: false
+        
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: ${{ vars.terraform_version }}
+          cli_config_credentials_token: ${{ secrets.TFE_TOKEN }}
+          cli_config_credentials_hostname: ${{ vars.terraform_api }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -upgrade
+          
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Test
+        id: test
+        run: terraform test -no-color

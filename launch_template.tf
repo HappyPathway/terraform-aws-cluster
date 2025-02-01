@@ -194,5 +194,5 @@ data "aws_launch_template" "lt" {
 }
 
 locals {
-  launch_template = var.launch_template.create ? one(aws_launch_template.lt) : one(data.aws_launch_template.lt)
+  launch_template = var.launch_template.create ? one(aws_launch_template.lt) : var.launch_template.use_launch_template ? one(data.aws_launch_template.lt) : null
 }

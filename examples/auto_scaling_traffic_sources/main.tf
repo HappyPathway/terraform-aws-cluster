@@ -42,11 +42,11 @@ module "autoscaling" {
   project_name       = var.project_name
   instance_type      = "t2.micro"
   auto_scaling = {
-    create           = true
-    min_size         = 1
-    max_size         = 1
-    desired_capacity = 1
-    subnets          = ["subnet-12345678"]
+    create            = true
+    min_size          = 1
+    max_size          = 1
+    desired_capacity  = 1
+    subnets           = ["subnet-12345678"]
     target_group_arns = [aws_lb_target_group.example.arn]
   }
   launch_template = {

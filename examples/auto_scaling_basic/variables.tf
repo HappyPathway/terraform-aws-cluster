@@ -23,11 +23,6 @@ variable "subnets" {
   type        = list(string)
 }
 
-variable "ami_id" {
-  description = "AMI ID for the launch configuration"
-  type        = string
-}
-
 variable "instance_type" {
   description = "Instance type for the launch configuration"
   type        = string

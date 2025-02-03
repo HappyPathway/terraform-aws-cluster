@@ -38,8 +38,8 @@ module "predictive_scaling_autoscaling" {
     ]
   }
   auto_scaling_policy = {
-    name                      = "predictive-scaling-policy"
-    policy_type               = "PredictiveScaling"
+    name        = "predictive-scaling-policy"
+    policy_type = "PredictiveScaling"
     predictive_scaling_configuration = {
       metric_specification = {
         target_value = 50.0

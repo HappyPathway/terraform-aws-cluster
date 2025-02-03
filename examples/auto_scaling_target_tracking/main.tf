@@ -50,8 +50,8 @@ module "autoscaling" {
     }]
   }
   auto_scaling_policy = {
-    name                      = "target-tracking-policy"
-    policy_type               = "TargetTrackingScaling"
+    name        = "target-tracking-policy"
+    policy_type = "TargetTrackingScaling"
     target_tracking_configuration = {
       predefined_metric_specification = {
         predefined_metric_type = "ASGAverageCPUUtilization"

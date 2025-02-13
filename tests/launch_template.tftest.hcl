@@ -1,7 +1,5 @@
 
-provider "aws" {
-  region = "us-east-2"
-}
+mock_provider "aws" {}
 
 variables {
   project_name  = "test-project"

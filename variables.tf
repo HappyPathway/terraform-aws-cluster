@@ -13,7 +13,7 @@ variable "ami" {
 }
 
 variable "auto_scaling" {
-  description = "Configuration for the auto scaling group"
+  description = "Configuration for the auto scaling group. Requires min_size, max_size, and desired_capacity to be set when create is true."
   type = object({
     create                           = bool
     min_size                         = number
@@ -21,20 +21,29 @@ variable "auto_scaling" {
     desired_capacity                 = number
     subnets                          = optional(list(string), null)
     availability_zones               = optional(list(string), null)
-    capacity_rebalance               = optional(bool, false)
+    capacity_rebalance               = optional(bool, true)  # Changed default to true for better availability
     default_cooldown                 = optional(number, 300)
     default_instance_warmup          = optional(number, 300)
     health_check_grace_period        = optional(number, 300)
-    health_check_type                = optional(string, "EC2")
+    health_check_type                = optional(string, "ELB") # Changed default to ELB for better reliability
     load_balancers                   = optional(list(string), [])
     target_group_arns                = optional(list(string), [])
-    termination_policies             = optional(list(string), [])
+    termination_policies             = optional(list(string), ["Default"]) # Added default termination policy
     suspended_processes              = optional(list(string), [])
     metrics_granularity              = optional(string, "1Minute")
-    enabled_metrics                  = optional(list(string), [])
+    enabled_metrics                  = optional(list(string), [
+      "GroupMinSize",
+      "GroupMaxSize",
+      "GroupDesiredCapacity",
+      "GroupInServiceInstances",
+      "GroupPendingInstances",
+      "GroupStandbyInstances",
+      "GroupTerminatingInstances",
+      "GroupTotalInstances"
+    ]) # Added default metrics for better monitoring
     wait_for_capacity_timeout        = optional(string, "10m")
-    min_elb_capacity                 = optional(number, 0)
-    wait_for_elb_capacity            = optional(number, 0)
+    min_elb_capacity                 = optional(number, null)
+    wait_for_elb_capacity            = optional(number, null)
     protect_from_scale_in            = optional(bool, false)
     service_linked_role_arn          = optional(string, null)
     max_instance_lifetime            = optional(number, 0)
@@ -60,21 +69,21 @@ variable "auto_scaling" {
     })), [])
     instance_refresh = optional(object({
       strategy = string
-      triggers = list(string)
+      triggers = optional(list(string), ["tag", "launch_template"])  # Added default triggers
       preferences = optional(object({
         instance_warmup              = optional(number, 300)
         min_healthy_percentage       = optional(number, 90)
-        checkpoint_percentages       = optional(list(number), [])
-        checkpoint_delay             = optional(number, 3600)
+        checkpoint_percentages       = optional(list(number), [20, 40, 60, 80, 100])  # Added default checkpoints
+        checkpoint_delay             = optional(number, 300)
         max_healthy_percentage       = optional(number, 100)
         skip_matching                = optional(bool, false)
-        auto_rollback                = optional(bool, false)
-        scale_in_protected_instances = optional(bool, false)
-        standby_instances            = optional(bool, false)
+        auto_rollback                = optional(bool, true)  # Changed default to true
+        scale_in_protected_instances = optional(string, "WAIT")  # Added default behavior
+        standby_instances            = optional(string, "TERMINATE")  # Added default behavior
         alarm_specification = optional(object({
           alarms = list(string)
         }), null)
-      }), null)
+      }), {})  # Changed to empty object default instead of null
     }), null)
     warm_pool = optional(object({
       instance_reuse_policy = optional(object({
@@ -111,23 +120,62 @@ variable "auto_scaling" {
     desired_capacity = 0
     subnets          = []
   }
+
+  validation {
+    condition     = !var.auto_scaling.create || (var.auto_scaling.min_size <= var.auto_scaling.desired_capacity && var.auto_scaling.desired_capacity <= var.auto_scaling.max_size)
+    error_message = "When create is true, desired_capacity must be between min_size and max_size."
+  }
+
+  validation {
+    condition     = !var.auto_scaling.create || var.auto_scaling.max_size > 0
+    error_message = "When create is true, max_size must be greater than 0."
+  }
+
+  validation {
+    condition     = !var.auto_scaling.create || (var.auto_scaling.subnets != null || var.auto_scaling.availability_zones != null)
+    error_message = "When create is true, either subnets or availability_zones must be specified."
+  }
+
+  validation {
+    condition     = contains(["EC2", "ELB"], var.auto_scaling.health_check_type)
+    error_message = "health_check_type must be either 'EC2' or 'ELB'."
+  }
+
+  validation {
+    condition     = var.auto_scaling.instance_refresh == null || contains(["Rolling"], var.auto_scaling.instance_refresh.strategy)
+    error_message = "instance_refresh strategy must be 'Rolling' when specified."
+  }
+
+  validation {
+    condition     = var.auto_scaling.instance_refresh == null || var.auto_scaling.instance_refresh.preferences == null || var.auto_scaling.instance_refresh.preferences.min_healthy_percentage >= 0 && var.auto_scaling.instance_refresh.preferences.min_healthy_percentage <= 100
+    error_message = "min_healthy_percentage must be between 0 and 100."
+  }
+
+  validation {
+    condition     = var.auto_scaling.instance_refresh == null || var.auto_scaling.instance_refresh.preferences == null || var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances == null || contains(["REFRESH", "WAIT", "STANDBY"], var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances)
+    error_message = "scale_in_protected_instances must be one of: REFRESH, WAIT, or STANDBY."
+  }
 }
 
 variable "auto_scaling_policy" {
-  description = "Configuration for the auto scaling policy"
+  description = "Configuration for the auto scaling policy. Supports target tracking, step scaling, and predictive scaling."
   type = object({
     name                      = string
+    policy_type               = optional(string, "TargetTrackingScaling") # Changed default to target tracking
     scaling_adjustment        = optional(number)
-    adjustment_type           = optional(string)
-    cooldown                  = optional(number)
-    policy_type               = optional(string)
-    estimated_instance_warmup = optional(number)
-    metric_aggregation_type   = optional(string)
+    adjustment_type           = optional(string, "ChangeInCapacity")
+    cooldown                  = optional(number, 300)
+    estimated_instance_warmup = optional(number, 300)
+    metric_aggregation_type   = optional(string, "Average")
+    
+    # Enhanced step scaling configuration
     step_adjustment = optional(list(object({
       scaling_adjustment          = number
-      metric_interval_lower_bound = optional(number)
+      metric_interval_lower_bound = optional(number, 0)
       metric_interval_upper_bound = optional(number)
     })))
+    
+    # Improved target tracking configuration
     target_tracking_configuration = optional(object({
       predefined_metric_specification = optional(object({
         predefined_metric_type = string
@@ -140,100 +188,22 @@ variable "auto_scaling_policy" {
         })))
         metric_name = string
         namespace   = string
-        statistic   = string
+        statistic   = optional(string, "Average")
         unit        = optional(string)
-        metrics = optional(list(object({
-          expression = optional(string)
-          id         = string
-          label      = optional(string)
-          metric_stat = optional(object({
-            metric = object({
-              dimensions = optional(list(object({
-                name  = string
-                value = string
-              })))
-              metric_name = string
-              namespace   = string
-            })
-            stat = string
-            unit = optional(string)
-          }))
-          return_data = optional(bool)
-        })))
       }))
       target_value     = number
       disable_scale_in = optional(bool, false)
     }))
+
+    # Enhanced predictive scaling configuration
     predictive_scaling_configuration = optional(object({
-      max_capacity_breach_behavior = optional(string)
-      max_capacity_buffer          = optional(number)
+      max_capacity_breach_behavior = optional(string, "HonorMaxCapacity")
+      max_capacity_buffer         = optional(number, 0)
+      scheduling_buffer_time      = optional(number, 300)
+      mode                        = optional(string, "ForecastAndScale")
       metric_specification = object({
         target_value = number
-        customized_capacity_metric_specification = optional(object({
-          metric_data_queries = list(object({
-            expression = optional(string)
-            id         = string
-            label      = optional(string)
-            metric_stat = optional(object({
-              metric = object({
-                dimensions = optional(list(object({
-                  name  = string
-                  value = string
-                })))
-                metric_name = string
-                namespace   = string
-              })
-              stat = string
-              unit = optional(string)
-            }))
-            return_data = optional(bool)
-          }))
-        }))
-        customized_load_metric_specification = optional(object({
-          metric_data_queries = list(object({
-            expression = optional(string)
-            id         = string
-            label      = optional(string)
-            metric_stat = optional(object({
-              metric = object({
-                dimensions = optional(list(object({
-                  name  = string
-                  value = string
-                })))
-                metric_name = string
-                namespace   = string
-              })
-              stat = string
-              unit = optional(string)
-            }))
-            return_data = optional(bool)
-          }))
-        }))
-        customized_scaling_metric_specification = optional(object({
-          metric_data_queries = list(object({
-            expression = optional(string)
-            id         = string
-            label      = optional(string)
-            metric_stat = optional(object({
-              metric = object({
-                dimensions = optional(list(object({
-                  name  = string
-                  value = string
-                })))
-                metric_name = string
-                namespace   = string
-              })
-              stat = string
-              unit = optional(string)
-            }))
-            return_data = optional(bool)
-          }))
-        }))
         predefined_load_metric_specification = optional(object({
-          predefined_metric_type = string
-          resource_label         = string
-        }))
-        predefined_metric_pair_specification = optional(object({
           predefined_metric_type = string
           resource_label         = string
         }))
@@ -242,11 +212,29 @@ variable "auto_scaling_policy" {
           resource_label         = string
         }))
       })
-      mode                   = optional(string)
-      scheduling_buffer_time = optional(number)
     }))
   })
   default = null
+
+  validation {
+    condition     = var.auto_scaling_policy == null || contains(["SimpleScaling", "StepScaling", "TargetTrackingScaling", "PredictiveScaling"], var.auto_scaling_policy.policy_type)
+    error_message = "policy_type must be one of: SimpleScaling, StepScaling, TargetTrackingScaling, or PredictiveScaling"
+  }
+
+  validation {
+    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.target_tracking_configuration == null || var.auto_scaling_policy.target_tracking_configuration.target_value > 0
+    error_message = "target_value in target_tracking_configuration must be greater than 0"
+  }
+
+  validation {
+    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.cooldown == null || var.auto_scaling_policy.cooldown >= 0
+    error_message = "cooldown period must be greater than or equal to 0"
+  }
+
+  validation {
+    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.estimated_instance_warmup == null || var.auto_scaling_policy.estimated_instance_warmup >= 0
+    error_message = "estimated_instance_warmup must be greater than or equal to 0"
+  }
 }
 
 variable "autoscaling_attachment" {

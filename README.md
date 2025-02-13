@@ -1,7 +1,91 @@
+# AWS Auto Scaling Group Terraform Module
+
 [![Terraform Validation](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform.yaml/badge.svg)](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform.yaml)
-
-
 [![Terraform Doc](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform-doc.yaml/badge.svg)](https://github.com/HappyPathway/terraform-aws-cluster/actions/workflows/terraform-doc.yaml)
+
+## Default Configuration Improvements
+
+This module now includes optimized defaults for Auto Scaling Groups:
+
+### Health Check Configuration
+- `health_check_type`: Default set to "ELB" for better reliability when used with load balancers
+- `health_check_grace_period`: Set to 300 seconds (5 minutes) to allow sufficient time for instance initialization
+
+### Capacity Management
+- `capacity_rebalance`: Enabled by default for better availability across AZs
+- `default_cooldown`: Set to 300 seconds to prevent rapid scaling changes
+- `default_instance_warmup`: Set to 300 seconds for proper instance initialization
+
+### Monitoring and Metrics
+- `metrics_granularity`: Set to "1Minute" for detailed monitoring
+- Default enabled metrics include:
+  - GroupMinSize
+  - GroupMaxSize
+  - GroupDesiredCapacity
+  - GroupInServiceInstances
+  - GroupPendingInstances
+  - GroupStandbyInstances
+  - GroupTerminatingInstances
+  - GroupTotalInstances
+
+### Input Validations
+The module now includes strict validations:
+- Ensures desired_capacity is between min_size and max_size
+- Validates max_size is greater than 0 when ASG is enabled
+- Requires either subnets or availability_zones to be specified
+- Validates health_check_type is either 'EC2' or 'ELB'
+
+## Instance Refresh Optimization
+
+The module now includes improved instance refresh defaults for safer rolling updates:
+
+### Default Instance Refresh Settings
+- `triggers`: Automatically set to track both tags and launch template changes
+- `min_healthy_percentage`: Set to 90% to maintain high availability during updates
+- `checkpoint_percentages`: Pre-configured checkpoints at 20%, 40%, 60%, 80%, and 100%
+- `auto_rollback`: Enabled by default to prevent failed deployments
+- `scale_in_protected_instances`: Set to "WAIT" to handle protected instances safely
+- `standby_instances`: Set to "TERMINATE" for clean instance replacement
+
+### Safety Mechanisms
+- Validates instance refresh strategy is "Rolling"
+- Ensures min_healthy_percentage is between 0-100
+- Prevents accidental detachment of load balancers during updates
+- Requires minimum capacity > 0 for service availability
+- Automatic rollback on failed deployments
+
+### Best Practices
+- Use the default checkpoints for gradual rollouts
+- Keep min_healthy_percentage high for production workloads
+- Let auto_rollback protect against failed deployments
+- Configure alarm_specification for additional safety
+
+## Scaling Policy Optimizations
+
+The module now includes improved defaults and validations for scaling policies:
+
+### Target Tracking Scaling (Default)
+- Default policy type set to `TargetTrackingScaling` for easier maintenance
+- Pre-configured metric aggregation as "Average"
+- Built-in protection against scale-in by default
+- Standard instance warmup period of 300 seconds
+
+### Step Scaling Enhancements
+- Automatic default lower bound of 0 for metric intervals
+- Preconfigured cooldown period of 300 seconds
+- Metric aggregation defaulted to "Average"
+
+### Predictive Scaling Features
+- Default mode set to "ForecastAndScale"
+- Scheduling buffer time of 300 seconds
+- Max capacity breach behavior set to "HonorMaxCapacity"
+- Built-in capacity buffer management
+
+### Policy Type Validation
+- Enforces valid policy types: SimpleScaling, StepScaling, TargetTrackingScaling, PredictiveScaling
+- Validates target values are positive numbers
+- Ensures cooldown and warmup periods are non-negative
+- Conditional parameter validation based on policy type
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -67,7 +151,7 @@ No modules.
 |------|-------------|
 | <a name="output_ami"></a> [ami](#output\_ami) | n/a |
 | <a name="output_autoscaling_group"></a> [autoscaling\_group](#output\_autoscaling\_group) | n/a |
-| <a name="output_cloud_init"></a> [cloud\_init](#output\_cloud\_init) | n/a |
+| <a name="output_cloud_init"></a> [cloud\_init](#output\_cloud_init) | n/a |
 <!-- END_TF_DOCS -->
 
 ## Examples
@@ -625,4 +709,3 @@ module "traffic_sources_autoscaling" {
     type       = "elb"
   }
 }
-```

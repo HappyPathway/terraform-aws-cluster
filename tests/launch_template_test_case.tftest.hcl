@@ -1,4 +1,3 @@
-
 provider "aws" {
   region = "us-east-2"
 }
@@ -36,7 +35,7 @@ variables {
   }
 }
 
-run "launch_template" {
+run "launch_template_test_case" {
   command = apply
 
   assert {

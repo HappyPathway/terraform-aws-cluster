@@ -5,7 +5,7 @@ provider "aws" {
 run "setup_infrastructure" {
   command = apply
   module {
-    source = "./tests/setup"
+    source = "./setup"
   }
 }
 
@@ -24,14 +24,14 @@ run "basic_cluster_creation" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }

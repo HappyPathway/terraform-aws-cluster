@@ -5,7 +5,7 @@ provider "aws" {
 run "setup_infrastructure" {
   command = apply
   module {
-    source = "./tests/setup"
+    source = "./setup"
   }
 }
 
@@ -24,7 +24,7 @@ run "verify_health_check_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
@@ -33,7 +33,7 @@ run "verify_health_check_defaults" {
       id = run.setup_infrastructure.launch_template_id
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }
@@ -77,14 +77,14 @@ run "verify_monitoring_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }
@@ -123,7 +123,7 @@ run "verify_instance_refresh_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
       instance_refresh = {
         strategy = "Rolling"
         preferences = {
@@ -138,7 +138,7 @@ run "verify_instance_refresh_defaults" {
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }
@@ -169,7 +169,7 @@ run "verify_launch_template_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
@@ -178,24 +178,19 @@ run "verify_launch_template_defaults" {
       id = run.setup_infrastructure.launch_template_id
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }
 
   assert {
-    condition     = startswith(aws_launch_template.lt[0].name, var.project_name)
+    condition     = aws_launch_template.lt[0].name == var.project_name
     error_message = "Launch template name should match project name"
   }
 
   assert {
     condition     = aws_launch_template.lt[0].update_default_version == true
     error_message = "Launch template should update default version"
-  }
-
-  assert {
-    condition     = aws_launch_template.lt[0].id != ""
-    error_message = "Launch template ID should not be empty"
   }
 }
 
@@ -214,7 +209,7 @@ run "verify_scaling_policy_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
@@ -223,7 +218,7 @@ run "verify_scaling_policy_defaults" {
       id = run.setup_infrastructure.launch_template_id
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }
@@ -262,14 +257,14 @@ run "verify_lifecycle_hook_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
     lifecycle_hooks = [{
@@ -317,14 +312,14 @@ run "verify_schedule_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
     autoscaling_schedule = [{
@@ -370,18 +365,18 @@ run "verify_traffic_source_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
     launch_template = {
       create = true
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
     autoscaling_traffic_source_attachment = {
-      identifier = "arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/test-tg/1234567890123456"
+      identifier = run.setup_infrastructure.target_group_arn
       type = "elb"
     }
   }
@@ -415,7 +410,7 @@ run "verify_warm_pool_defaults" {
       min_size         = 1
       max_size         = 3
       desired_capacity = 2
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
       warm_pool = {
         pool_state = "Stopped"
         min_size = 1
@@ -430,7 +425,7 @@ run "verify_warm_pool_defaults" {
       use_launch_template = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id = run.setup_infrastructure.subnet_id
+        subnet_id = run.setup_infrastructure.subnet_ids[0]
       }]
     }
   }

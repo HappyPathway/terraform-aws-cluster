@@ -5,7 +5,7 @@ provider "aws" {
 run "setup_infrastructure" {
   command = apply
   module {
-    source = "./tests/setup"
+    source = "./setup"
   }
 }
 
@@ -25,7 +25,7 @@ run "launch_template" {
       create             = true
       network_interfaces = [{
         associate_public_ip_address = true
-        subnet_id                   = run.setup_infrastructure.subnet_id
+        subnet_id                   = run.setup_infrastructure.subnet_ids[0]
       }]
     }
     auto_scaling = {
@@ -33,7 +33,7 @@ run "launch_template" {
       min_size         = 1
       max_size         = 2
       desired_capacity = 1
-      subnets         = [run.setup_infrastructure.subnet_id]
+      subnets         = run.setup_infrastructure.subnet_ids
     }
   }
 

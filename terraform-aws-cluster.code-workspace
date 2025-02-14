@@ -5,15 +5,15 @@
 			"name": "terraform-aws-cluster"
 		},
 		{
-			"path": "../terraform-provider-aws/website/docs/d",
+			"path": "../providers/terraform-provider-aws/website/docs/d",
 			"name": "aws/data-sources"
 		},
 		{
-			"path": "../terraform-provider-aws/website/docs/r",
+			"path": "../providers/terraform-provider-aws/website/docs/r",
 			"name": "aws/resources"
 		},
 		{
-			"path": "../terraform-provider-aws/website/docs/functions",
+			"path": "../providers/terraform-provider-aws/website/docs/functions",
 			"name": "aws/functions"
 		},
 		{
@@ -22,3 +22,4 @@
 		}
 	]
 }
+z

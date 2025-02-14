@@ -8,28 +8,55 @@ resource "aws_autoscaling_group" "asg" {
   vpc_zone_identifier = var.auto_scaling.subnets
   placement_group     = var.placement_group == null ? null : one(aws_placement_group.pg).name
 
-  availability_zones               = var.auto_scaling.availability_zones
-  capacity_rebalance               = var.auto_scaling.capacity_rebalance
-  default_cooldown                 = var.auto_scaling.default_cooldown
-  default_instance_warmup          = var.auto_scaling.default_instance_warmup
-  health_check_grace_period        = var.auto_scaling.health_check_grace_period
-  health_check_type                = var.auto_scaling.health_check_type
-  load_balancers                   = var.auto_scaling.load_balancers
-  target_group_arns                = var.auto_scaling.target_group_arns
+  # Enhanced health check configuration
+  health_check_type         = var.auto_scaling.health_check_type
+  health_check_grace_period = var.auto_scaling.health_check_grace_period
+  wait_for_elb_capacity     = var.auto_scaling.health_check_type == "ELB" ? var.auto_scaling.desired_capacity : var.auto_scaling.wait_for_elb_capacity
+  min_elb_capacity          = var.auto_scaling.health_check_type == "ELB" ? var.auto_scaling.min_size : var.auto_scaling.min_elb_capacity
+
+  # Improved capacity management
+  capacity_rebalance      = var.auto_scaling.capacity_rebalance
+  default_cooldown        = var.auto_scaling.default_cooldown
+  default_instance_warmup = var.auto_scaling.default_instance_warmup
+  
+  # Load balancer integration
+  target_group_arns = var.auto_scaling.target_group_arns
+  load_balancers    = var.auto_scaling.load_balancers
+
+  # Instance lifecycle management
+  max_instance_lifetime            = var.auto_scaling.max_instance_lifetime
   termination_policies             = var.auto_scaling.termination_policies
   suspended_processes              = var.auto_scaling.suspended_processes
-  metrics_granularity              = var.auto_scaling.metrics_granularity
-  enabled_metrics                  = var.auto_scaling.enabled_metrics
-  wait_for_capacity_timeout        = var.auto_scaling.wait_for_capacity_timeout
-  min_elb_capacity                 = var.auto_scaling.min_elb_capacity
-  wait_for_elb_capacity            = var.auto_scaling.wait_for_elb_capacity
-  protect_from_scale_in            = var.auto_scaling.protect_from_scale_in
-  service_linked_role_arn          = var.auto_scaling.service_linked_role_arn
-  max_instance_lifetime            = var.auto_scaling.max_instance_lifetime
+  protect_from_scale_in           = var.auto_scaling.protect_from_scale_in
   force_delete                     = var.auto_scaling.force_delete
   ignore_failed_scaling_activities = var.auto_scaling.ignore_failed_scaling_activities
 
-  desired_capacity_type = var.auto_scaling.desired_capacity_type
+  # Enhanced monitoring
+  metrics_granularity = var.auto_scaling.metrics_granularity
+  enabled_metrics     = var.auto_scaling.enabled_metrics
+
+  # Required base tags
+  tag {
+    key                 = "Name"
+    value               = var.project_name
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "managed-by"
+    value               = "terraform"
+    propagate_at_launch = true
+  }
+
+  # Custom tags
+  dynamic "tag" {
+    for_each = var.tags
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = var.propagate_tags_at_launch
+    }
+  }
 
   dynamic "traffic_source" {
     for_each = var.auto_scaling.traffic_source == null ? [] : [1]
@@ -47,20 +74,11 @@ resource "aws_autoscaling_group" "asg" {
     }
   }
 
-  dynamic "tag" {
-    for_each = var.tags
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = var.propagate_tags_at_launch
-    }
-  }
-
   dynamic "launch_template" {
     for_each = var.launch_template.use_launch_template ? [1] : []
     content {
-      id      = local.launch_template.id
-      version = local.launch_template.latest_version
+      id      = var.launch_template.create ? one(aws_launch_template.lt).id : one(data.aws_launch_template.lt).id
+      version = var.launch_template.create ? one(aws_launch_template.lt).latest_version : one(data.aws_launch_template.lt).latest_version
     }
   }
 
@@ -109,23 +127,23 @@ resource "aws_autoscaling_group" "asg" {
     content {
       strategy = var.auto_scaling.instance_refresh.strategy
       triggers = var.auto_scaling.instance_refresh.triggers
-      dynamic "preferences" {
-        for_each = var.auto_scaling.instance_refresh.preferences == null ? [] : [1]
-        content {
-          instance_warmup              = var.auto_scaling.instance_refresh.preferences.instance_warmup
-          min_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.min_healthy_percentage
-          checkpoint_percentages       = var.auto_scaling.instance_refresh.preferences.checkpoint_percentages
-          checkpoint_delay             = var.auto_scaling.instance_refresh.preferences.checkpoint_delay
-          max_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.max_healthy_percentage
-          skip_matching                = var.auto_scaling.instance_refresh.preferences.skip_matching
-          auto_rollback                = var.auto_scaling.instance_refresh.preferences.auto_rollback
-          scale_in_protected_instances = var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances
-          standby_instances            = var.auto_scaling.instance_refresh.preferences.standby_instances
-          dynamic "alarm_specification" {
-            for_each = var.auto_scaling.instance_refresh.preferences.alarm_specification == null ? [] : [1]
-            content {
-              alarms = var.auto_scaling.instance_refresh.preferences.alarm_specification.alarms
-            }
+
+      # Enhanced preferences configuration with proper defaults
+      preferences {
+        instance_warmup              = var.auto_scaling.instance_refresh.preferences.instance_warmup
+        min_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.min_healthy_percentage
+        checkpoint_percentages       = var.auto_scaling.instance_refresh.preferences.checkpoint_percentages
+        checkpoint_delay             = var.auto_scaling.instance_refresh.preferences.checkpoint_delay
+        max_healthy_percentage       = var.auto_scaling.instance_refresh.preferences.max_healthy_percentage
+        skip_matching                = var.auto_scaling.instance_refresh.preferences.skip_matching
+        auto_rollback                = var.auto_scaling.instance_refresh.preferences.auto_rollback
+        scale_in_protected_instances = var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances
+        standby_instances            = var.auto_scaling.instance_refresh.preferences.standby_instances
+
+        dynamic "alarm_specification" {
+          for_each = var.auto_scaling.instance_refresh.preferences.alarm_specification == null ? [] : [1]
+          content {
+            alarms = var.auto_scaling.instance_refresh.preferences.alarm_specification.alarms
           }
         }
       }
@@ -145,6 +163,23 @@ resource "aws_autoscaling_group" "asg" {
   }
 
   depends_on = [aws_launch_template.lt]
+
+  lifecycle {
+    create_before_destroy = true
+    
+    # Prevent accidental capacity changes
+    ignore_changes = [
+      desired_capacity,
+      target_group_arns,  # Prevent load balancer detachment during updates
+      load_balancers      # Prevent classic ELB detachment during updates
+    ]
+
+    # Ensure replacement happens safely
+    precondition {
+      condition     = var.auto_scaling.min_size > 0 || var.auto_scaling.desired_capacity > 0
+      error_message = "Either min_size or desired_capacity must be greater than 0 to ensure service availability."
+    }
+  }
 }
 
 data "aws_autoscaling_group" "asg" {

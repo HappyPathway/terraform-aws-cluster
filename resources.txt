@@ -1,0 +1,43 @@
+Resources:
+- aws_autoscaling_group
+- aws_autoscaling_policy
+- aws_launch_template
+- aws_placement_group
+- aws_autoscaling_schedule
+- aws_autoscaling_lifecycle_hook
+- aws_autoscaling_traffic_source_attachment
+- aws_autoscaling_attachment
+
+Data Sources:
+- aws_ami (data source)
+- aws_launch_template (data source)
+- aws_autoscaling_group (data source)
+
+Provider Types:
+- aws
+
+Default Values observed:
+- ASG defaults:
+  - health_check_type = "ELB"
+  - health_check_grace_period = 300
+  - capacity_rebalance = true
+  - metrics_granularity = "1Minute"
+  - enabled_metrics = ["GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity", "GroupInServiceInstances"]
+
+- Launch Template defaults:
+  - update_default_version = true
+
+- ASG Policy defaults:
+  - policy_type = "TargetTrackingScaling"
+  - metric_aggregation_type = "Average"
+  - estimated_instance_warmup = 300
+
+- Instance Refresh defaults:
+  - strategy = "Rolling"
+  - min_healthy_percentage = 90
+  - checkpoint_percentages = [20, 40, 60, 80, 100]
+  - auto_rollback = true
+
+- Lifecycle Hook defaults:
+  - default_result = "CONTINUE"
+  - heartbeat_timeout = 300

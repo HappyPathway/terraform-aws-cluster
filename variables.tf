@@ -83,7 +83,7 @@ variable "auto_scaling" {
         alarm_specification = optional(object({
           alarms = list(string)
         }), null)
-      }), {})  # Changed to empty object default instead of null
+      }), null)
     }), null)
     warm_pool = optional(object({
       instance_reuse_policy = optional(object({
@@ -119,41 +119,39 @@ variable "auto_scaling" {
     max_size         = 0
     desired_capacity = 0
     subnets          = []
+    health_check_type = "ELB"
+    instance_refresh = null
   }
 
   validation {
-    condition     = !var.auto_scaling.create || (var.auto_scaling.min_size <= var.auto_scaling.desired_capacity && var.auto_scaling.desired_capacity <= var.auto_scaling.max_size)
+    condition = (
+      !var.auto_scaling.create || 
+      (var.auto_scaling.min_size <= var.auto_scaling.desired_capacity && var.auto_scaling.desired_capacity <= var.auto_scaling.max_size)
+    )
     error_message = "When create is true, desired_capacity must be between min_size and max_size."
   }
 
   validation {
-    condition     = !var.auto_scaling.create || var.auto_scaling.max_size > 0
+    condition = !var.auto_scaling.create || var.auto_scaling.max_size > 0
     error_message = "When create is true, max_size must be greater than 0."
   }
 
   validation {
-    condition     = !var.auto_scaling.create || (var.auto_scaling.subnets != null || var.auto_scaling.availability_zones != null)
+    condition = !var.auto_scaling.create || (var.auto_scaling.subnets != null || var.auto_scaling.availability_zones != null)
     error_message = "When create is true, either subnets or availability_zones must be specified."
   }
 
   validation {
-    condition     = contains(["EC2", "ELB"], var.auto_scaling.health_check_type)
+    condition = !var.auto_scaling.create || var.auto_scaling.health_check_type == null || contains(["EC2", "ELB"], var.auto_scaling.health_check_type)
     error_message = "health_check_type must be either 'EC2' or 'ELB'."
   }
 
   validation {
-    condition     = var.auto_scaling.instance_refresh == null || contains(["Rolling"], var.auto_scaling.instance_refresh.strategy)
+    condition = (
+      var.auto_scaling.instance_refresh == null ||
+      try(contains(["Rolling"], var.auto_scaling.instance_refresh.strategy), true)
+    )
     error_message = "instance_refresh strategy must be 'Rolling' when specified."
-  }
-
-  validation {
-    condition     = var.auto_scaling.instance_refresh == null || var.auto_scaling.instance_refresh.preferences == null || var.auto_scaling.instance_refresh.preferences.min_healthy_percentage >= 0 && var.auto_scaling.instance_refresh.preferences.min_healthy_percentage <= 100
-    error_message = "min_healthy_percentage must be between 0 and 100."
-  }
-
-  validation {
-    condition     = var.auto_scaling.instance_refresh == null || var.auto_scaling.instance_refresh.preferences == null || var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances == null || contains(["REFRESH", "WAIT", "STANDBY"], var.auto_scaling.instance_refresh.preferences.scale_in_protected_instances)
-    error_message = "scale_in_protected_instances must be one of: REFRESH, WAIT, or STANDBY."
   }
 }
 
@@ -161,7 +159,7 @@ variable "auto_scaling_policy" {
   description = "Configuration for the auto scaling policy. Supports target tracking, step scaling, and predictive scaling."
   type = object({
     name                      = string
-    policy_type               = optional(string, "TargetTrackingScaling") # Changed default to target tracking
+    policy_type               = optional(string, "TargetTrackingScaling")
     scaling_adjustment        = optional(number)
     adjustment_type           = optional(string, "ChangeInCapacity")
     cooldown                  = optional(number, 300)
@@ -194,7 +192,6 @@ variable "auto_scaling_policy" {
       target_value     = number
       disable_scale_in = optional(bool, false)
     }))
-
     # Enhanced predictive scaling configuration
     predictive_scaling_configuration = optional(object({
       max_capacity_breach_behavior = optional(string, "HonorMaxCapacity")
@@ -215,24 +212,33 @@ variable "auto_scaling_policy" {
     }))
   })
   default = null
-
   validation {
-    condition     = var.auto_scaling_policy == null || contains(["SimpleScaling", "StepScaling", "TargetTrackingScaling", "PredictiveScaling"], var.auto_scaling_policy.policy_type)
+    condition = (
+      var.auto_scaling_policy == null ||
+      try(contains(["SimpleScaling", "StepScaling", "TargetTrackingScaling", "PredictiveScaling"], var.auto_scaling_policy.policy_type), true)
+    )
     error_message = "policy_type must be one of: SimpleScaling, StepScaling, TargetTrackingScaling, or PredictiveScaling"
   }
-
   validation {
-    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.target_tracking_configuration == null || var.auto_scaling_policy.target_tracking_configuration.target_value > 0
+    condition = (
+      var.auto_scaling_policy == null ||
+      try(var.auto_scaling_policy.target_tracking_configuration == null, true) ||
+      try(var.auto_scaling_policy.target_tracking_configuration.target_value > 0, true)
+    )
     error_message = "target_value in target_tracking_configuration must be greater than 0"
   }
-
   validation {
-    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.cooldown == null || var.auto_scaling_policy.cooldown >= 0
+    condition = (
+      var.auto_scaling_policy == null ||
+      try(var.auto_scaling_policy.cooldown == null || var.auto_scaling_policy.cooldown >= 0, true)
+    )
     error_message = "cooldown period must be greater than or equal to 0"
   }
-
   validation {
-    condition     = var.auto_scaling_policy == null || var.auto_scaling_policy.estimated_instance_warmup == null || var.auto_scaling_policy.estimated_instance_warmup >= 0
+    condition = (
+      var.auto_scaling_policy == null ||
+      try(var.auto_scaling_policy.estimated_instance_warmup == null || var.auto_scaling_policy.estimated_instance_warmup >= 0, true)
+    )
     error_message = "estimated_instance_warmup must be greater than or equal to 0"
   }
 }

@@ -1,6 +1,7 @@
 provider "aws" {
   region = "us-west-2"
 }
+
 run "setup_infrastructure" {
   command = apply
   module {

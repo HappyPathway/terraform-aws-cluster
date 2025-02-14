@@ -2,9 +2,9 @@ name: "Terraform Validate"
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
 
 env:
   GITHUB_OWNER: ${{ vars.GH_ORG }}
@@ -12,8 +12,6 @@ env:
   GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
   TF_WORKSPACE: happypathway
   TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
-  AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   
 jobs:
   setup-terraform:
@@ -68,12 +66,10 @@ jobs:
       cache: ${{ github.workspace }}
       download_cache: true
       commit_sha: ${{ needs.setup-terraform.outputs.commit_sha }}
-      AWS_ACCESS_KEY_ID: ${{ vars.AWS_ACCESS_KEY_ID }}
     secrets:
       TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
      
   gtag:
     needs: terraform-validate

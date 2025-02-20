@@ -1,0 +1,21 @@
+{
+  "folders": [{"name":"morpheus-workspace","path":"."},{"name":"terraform-aws-cluster","path":"../terraform-aws-cluster"},{"name":"terraform-aws-efs","path":"../terraform-aws-efs"},{"name":"terraform-aws-mq-cluster","path":"../terraform-aws-mq-cluster"},{"name":"terraform-aws-opensearch-cluster","path":"../terraform-aws-opensearch-cluster"},{"name":"terraform-aws-rds","path":"../terraform-aws-rds"},{"name":"terraform-aws-ses","path":"../terraform-aws-ses"}],
+  "extensions": {
+    "recommendations": ["github.copilot","github.copilot-chat","eamodio.gitlens","github.vscode-github-actions","hashicorp.terraform","hashicorp.hcl","4ops.terraform","amazonwebservices.aws-toolkit-vscode"]
+  },
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true
+    },
+    "[terraform]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "hashicorp.terraform"
+    },
+    "workbench.iconTheme": "vscode-icons",
+    "editor.inlineSuggest.enabled": true,
+    "github.copilot.enable": {
+      "*": true
+    }
+  }
+}

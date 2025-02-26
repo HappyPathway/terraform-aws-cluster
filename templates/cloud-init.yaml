@@ -1,0 +1,126 @@
+#cloud-config
+write_files:
+  - path: /usr/local/bin/configure-morpheus.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+
+      # Get instance region
+      REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+      PARAMETER_PREFIX="${parameter_prefix}"
+      SECRETS_PREFIX="${secrets_prefix}"
+
+      # Fetch service endpoints
+      AURORA_ENDPOINT=$(aws ssm get-parameter --name "$PARAMETER_PREFIX/endpoints/aurora" --region $REGION --query "Parameter.Value" --output text)
+      RABBITMQ_ENDPOINT=$(aws ssm get-parameter --name "$PARAMETER_PREFIX/endpoints/rabbitmq" --region $REGION --query "Parameter.Value" --output text)
+      OPENSEARCH_ENDPOINT=$(aws ssm get-parameter --name "$PARAMETER_PREFIX/endpoints/opensearch" --region $REGION --query "Parameter.Value" --output text)
+      EFS_ID=$(aws ssm get-parameter --name "$PARAMETER_PREFIX/endpoints/efs_id" --region $REGION --query "Parameter.Value" --output text)
+
+      # Fetch credentials
+      DB_CREDS=$(aws secretsmanager get-secret-value --secret-id "$SECRETS_PREFIX/db/credentials" --region $REGION --query "SecretString" --output text)
+      MQ_CREDS=$(aws secretsmanager get-secret-value --secret-id "$SECRETS_PREFIX/rabbitmq/credentials" --region $REGION --query "SecretString" --output text)
+
+      # Parse JSON credentials
+      DB_USERNAME=$(echo $DB_CREDS | jq -r .username)
+      DB_PASSWORD=$(echo $DB_CREDS | jq -r .password)
+      MQ_USERNAME=$(echo $MQ_CREDS | jq -r .username)
+      MQ_PASSWORD=$(echo $MQ_CREDS | jq -r .password)
+
+      # Mount EFS
+      mkdir -p /mnt/efs/morpheus
+      if ! mountpoint -q /mnt/efs/morpheus; then
+        mount -t efs -o tls,iam $EFS_ID:/ /mnt/efs/morpheus
+        echo "$EFS_ID:/ /mnt/efs/morpheus efs _netdev,tls,iam 0 0" >> /etc/fstab
+      fi
+
+      # Configure Morpheus
+      cat > /etc/morpheus/morpheus.rb << EOL
+      appliance_url: '$(aws ssm get-parameter --name "$PARAMETER_PREFIX/config/app_url" --region $REGION --query "Parameter.Value" --output text)'
+      app_dir: '/opt/morpheus'
+
+      elasticsearch:
+        host: '$OPENSEARCH_ENDPOINT'
+        port: 443
+        use_tls: true
+
+      rabbitmq:
+        host: '$RABBITMQ_ENDPOINT'
+        port: 5671
+        use_tls: true
+        vhost: '/'
+        username: '$MQ_USERNAME'
+        password: '$MQ_PASSWORD'
+
+      mysql:
+        host: '$AURORA_ENDPOINT'
+        port: 3306
+        database: 'morpheus'
+        username: '$DB_USERNAME'
+        password: '$DB_PASSWORD'
+
+      shared_storage:
+        root: '/mnt/efs/morpheus'
+      EOL
+
+      # Set proper permissions
+      chown morpheus-app:morpheus-app /etc/morpheus/morpheus.rb
+      chmod 600 /etc/morpheus/morpheus.rb
+
+      # Start Morpheus services
+      systemctl enable morpheus-ui
+      systemctl start morpheus-ui
+
+  - path: /etc/cloudwatch-agent/config.json
+    permissions: '0644'
+    content: |
+      {
+        "agent": {
+          "metrics_collection_interval": 60,
+          "run_as_user": "root"
+        },
+        "logs": {
+          "logs_collected": {
+            "files": {
+              "collect_list": [
+                {
+                  "file_path": "/var/log/morpheus/morpheus-ui/current",
+                  "log_group_name": "/morpheus/application",
+                  "log_stream_name": "{instance_id}",
+                  "timezone": "UTC"
+                },
+                {
+                  "file_path": "/var/log/nginx/access.log",
+                  "log_group_name": "/morpheus/nginx",
+                  "log_stream_name": "{instance_id}",
+                  "timezone": "UTC"
+                }
+              ]
+            }
+          }
+        },
+        "metrics": {
+          "namespace": "Morpheus",
+          "metrics_collected": {
+            "cpu": {
+              "measurement": ["cpu_usage_idle", "cpu_usage_user", "cpu_usage_system"]
+            },
+            "mem": {
+              "measurement": ["mem_used_percent"]
+            },
+            "swap": {
+              "measurement": ["swap_used_percent"]
+            },
+            "disk": {
+              "measurement": ["disk_used_percent"],
+              "resources": ["/"]
+            }
+          }
+        }
+      }
+
+runcmd:
+  - amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/etc/cloudwatch-agent/config.json
+  - systemctl enable amazon-cloudwatch-agent
+  - systemctl start amazon-cloudwatch-agent
+  - /usr/local/bin/configure-morpheus.sh

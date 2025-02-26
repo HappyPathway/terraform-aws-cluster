@@ -409,8 +409,29 @@ variable "launch_template" {
     }), {})
   })
   default = {
-    create        = false
-    instance_type = "t2.micro"
+    create = true
+    block_device_mappings = [
+      {
+        device_name = "/dev/xvda"
+        ebs = {
+          volume_size = 100
+          volume_type = "gp3"
+        }
+      },
+      {
+        device_name = "/dev/xvdb"
+        ebs = {
+          volume_size = 200
+          volume_type = "gp3"
+        }
+      }
+    ]
+    metadata_options = {
+      http_endpoint               = "enabled"
+      http_tokens                 = "required"
+      http_put_response_hop_limit = 2
+      instance_metadata_tags      = "enabled"
+    }
   }
 }
 
@@ -466,4 +487,52 @@ variable "vpc_cluster" {
   description = "Boolean flag to indicate if the cluster is within a VPC"
   type        = bool
   default     = true
+}
+
+variable "morpheus_config" {
+  description = "Morpheus-specific configuration options"
+  type = object({
+    appliance_url   = string
+    rabbitmq_host   = string
+    rabbitmq_port   = optional(number, 5671)
+    rabbitmq_vhost  = optional(string, "/")
+    db_host         = string
+    db_port         = optional(number, 3306)
+    db_name         = optional(string, "morpheus")
+    opensearch_host = string
+    opensearch_port = optional(number, 443)
+    efs_dns_name    = string
+    redis_host      = optional(string)
+    redis_port      = optional(number, 6379)
+  })
+}
+
+variable "morpheus_secrets" {
+  description = "ARNs of AWS Secrets Manager secrets containing Morpheus credentials"
+  type = object({
+    rabbitmq_secret_arn = string
+    database_secret_arn = string
+    ssl_certificate_arn = string
+    redis_secret_arn    = string
+  })
+}
+
+variable "target_group_arn" {
+  description = "ARN of the ALB target group to attach the ASG to"
+  type        = string
+}
+
+variable "cluster_name" {
+  description = "Name of the Morpheus cluster"
+  type        = string
+}
+
+variable "parameter_prefix" {
+  description = "SSM Parameter Store prefix for Morpheus configuration"
+  type        = string
+}
+
+variable "secrets_prefix" {
+  description = "Secrets Manager prefix for Morpheus secrets"
+  type        = string
 }

@@ -12,6 +12,7 @@ resource "aws_launch_template" "lt" {
       ebs {
         volume_size = block_device_mappings.value.ebs.volume_size
         volume_type = block_device_mappings.value.ebs.volume_type
+        encrypted   = true
       }
     }
   }
@@ -182,7 +183,7 @@ resource "aws_launch_template" "lt" {
 
   tags                   = var.tags
   update_default_version = true
-  user_data              = local.cloud_init
+  user_data              = local.user_data
   vpc_security_group_ids = var.vpc_cluster ? var.security_group_ids : null
 }
 

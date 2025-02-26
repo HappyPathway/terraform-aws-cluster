@@ -15,7 +15,7 @@ resource "aws_autoscaling_group" "asg" {
   health_check_grace_period        = var.auto_scaling.health_check_grace_period
   health_check_type                = var.auto_scaling.health_check_type
   load_balancers                   = var.auto_scaling.load_balancers
-  target_group_arns                = var.auto_scaling.target_group_arns
+  target_group_arns                = [var.target_group_arn]
   termination_policies             = var.auto_scaling.termination_policies
   suspended_processes              = var.auto_scaling.suspended_processes
   metrics_granularity              = var.auto_scaling.metrics_granularity

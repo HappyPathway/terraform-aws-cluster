@@ -184,3 +184,34 @@ resource "aws_autoscaling_policy" "asg_policy" {
     }
   }
 }
+
+resource "aws_autoscaling_policy" "cpu_tracking" {
+  count = var.auto_scaling.create ? 1 : 0
+
+  name                   = "${var.project_name}-cpu-tracking"
+  autoscaling_group_name = aws_autoscaling_group.asg[0].name
+  policy_type            = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
+}
+
+resource "aws_autoscaling_policy" "request_tracking" {
+  count = var.auto_scaling.create ? 1 : 0
+
+  name                   = "${var.project_name}-request-tracking"
+  autoscaling_group_name = aws_autoscaling_group.asg[0].name
+  policy_type            = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = var.autoscaling_attachment.lb_target_group_arn
+    }
+    target_value = 1000.0
+  }
+}

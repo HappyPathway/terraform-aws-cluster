@@ -1,0 +1,78 @@
+#cloud-config
+packages:
+  - java-11-amazon-corretto
+  - nginx
+  - amazon-efs-utils
+  - amazon-cloudwatch-agent
+  - jq
+
+write_files:
+  - path: /etc/cloudwatch/config.json
+    content: |
+      {
+        "logs": {
+          "logs_collected": {
+            "files": {
+              "collect_list": [
+                {
+                  "file_path": "/var/log/morpheus/morpheus-ui/current",
+                  "log_group_name": "/morpheus/application",
+                  "log_stream_name": "{instance_id}"
+                },
+                {
+                  "file_path": "/var/log/nginx/access.log",
+                  "log_group_name": "/morpheus/nginx",
+                  "log_stream_name": "{instance_id}"
+                }
+              ]
+            }
+          }
+        },
+        "metrics": {
+          "namespace": "Morpheus",
+          "metrics_collected": {
+            "mem": {
+              "measurement": ["mem_used_percent"]
+            },
+            "disk": {
+              "measurement": ["disk_used_percent"],
+              "resources": ["/"]
+            }
+          }
+        }
+      }
+
+  - path: /etc/nginx/conf.d/morpheus.conf
+    content: |
+      upstream morpheus {
+          server 127.0.0.1:8080;
+          keepalive 32;
+      }
+
+      server {
+          listen 80;
+          server_name _;
+          
+          location /health {
+              access_log off;
+              return 200 'healthy\n';
+          }
+          
+          location / {
+              return 301 https://$host$request_uri;
+          }
+      }
+
+  - path: /etc/security/limits.d/morpheus.conf
+    content: |
+      morpheus soft nofile 65535
+      morpheus hard nofile 65535
+      morpheus soft nproc 65535
+      morpheus hard nproc 65535
+
+runcmd:
+  - systemctl enable nginx
+  - systemctl start nginx
+  - systemctl enable amazon-cloudwatch-agent
+  - systemctl start amazon-cloudwatch-agent
+  - mkdir -p /morpheus/lib

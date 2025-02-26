@@ -1,29 +1,20 @@
-data "cloudinit_config" "cloud_init" {
-  count         = local.cloud_init_parts > 0 ? 1 : 0
-  gzip          = false
-  base64_encode = false
+data "cloudinit_config" "config" {
+  gzip          = true
+  base64_encode = true
 
-  # change to loop over a list of files
-  dynamic "part" {
-    for_each = var.file_list
-    content {
-      filename     = part.value.filename
-      content_type = part.value.content_type
-      content      = file("${part.value.filename}")
-    }
-  }
-
-  dynamic "part" {
-    for_each = var.cloud_init_config
-    content {
-      filename     = part.value.filename
-      content_type = part.value.content_type
-      content      = file("${path.module}/${part.value.filename}")
-    }
+  part {
+    content_type = "text/cloud-config"
+    content = templatefile("${path.module}/templates/cloud-init.yaml", {
+      parameter_prefix = var.parameter_prefix
+      secrets_prefix   = var.secrets_prefix
+    })
   }
 }
 
 locals {
-  cloud_init_parts = length(concat(var.cloud_init_config, var.file_list))
-  cloud_init       = local.cloud_init_parts > 0 ? data.cloudinit_config.cloud_init[0].rendered : null
+  user_data = data.cloudinit_config.config.rendered
+}
+
+data "aws_availability_zone" "current" {
+  name = var.launch_template.placement != null ? var.launch_template.placement.availability_zone : null
 }

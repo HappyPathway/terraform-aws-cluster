@@ -1,7 +1,7 @@
 #cloud-config
 write_files:
   - path: /usr/local/bin/configure-morpheus.sh
-    permissions: '0755'
+    permissions: "0755"
     content: |
       #!/bin/bash
       set -e
@@ -72,7 +72,7 @@ write_files:
       systemctl start morpheus-ui
 
   - path: /etc/cloudwatch-agent/config.json
-    permissions: '0644'
+    permissions: "0644"
     content: |
       {
         "agent": {

@@ -64,8 +64,8 @@ resource "aws_cloudwatch_metric_alarm" "error_rate_high" {
   alarm_description  = "Application error rate is too high"
 
   dimensions = {
-    LoadBalancer = var.autoscaling_attachment.elb
-    TargetGroup  = var.autoscaling_attachment.lb_target_group_arn
+    LoadBalancer = try(var.autoscaling_attachment.elb, null)
+    TargetGroup  = try(var.autoscaling_attachment.lb_target_group_arn, null)
   }
 }
 
@@ -82,8 +82,8 @@ resource "aws_cloudwatch_metric_alarm" "response_time_high" {
   alarm_description  = "Application response time is too high"
 
   dimensions = {
-    LoadBalancer = var.autoscaling_attachment.elb
-    TargetGroup  = var.autoscaling_attachment.lb_target_group_arn
+    LoadBalancer = try(var.autoscaling_attachment.elb, null)
+    TargetGroup  = try(var.autoscaling_attachment.lb_target_group_arn, null)
   }
 }
 

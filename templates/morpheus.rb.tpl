@@ -30,11 +30,11 @@ high_availability['zone'] = '${availability_zone}'
 shared_storage['enabled'] = true
 shared_storage['mount_path'] = '/morpheus/lib'
 
-# Session management
+# Session management using Redis
 sessions['store'] = 'redis'
 sessions['redis']['host'] = '${redis_host}'
 sessions['redis']['port'] = ${redis_port}
-sessions['redis']['password'] = '${redis_password}'
+sessions['redis']['password'] = '${redis_auth_token}'
 sessions['redis']['ssl'] = true
 
 # Performance settings

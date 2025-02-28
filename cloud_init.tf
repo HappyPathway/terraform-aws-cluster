@@ -11,10 +11,18 @@ data "cloudinit_config" "config" {
   }
 }
 
-locals {
-  user_data = data.cloudinit_config.config.rendered
+data "cloudinit_config" "cloud_init" {
+  gzip          = true
+  base64_encode = true
+
+  part {
+    content_type = "text/cloud-config"
+    content = jsonencode({
+      write_files = var.cloud_init_config
+    })
+  }
 }
 
-data "aws_availability_zone" "current" {
-  name = var.launch_template.placement != null ? var.launch_template.placement.availability_zone : null
+locals {
+  user_data = data.cloudinit_config.config.rendered
 }
